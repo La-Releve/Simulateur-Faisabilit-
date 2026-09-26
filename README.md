@@ -1,0 +1,45 @@
+# Simulateur de Faisabilité — La Relève
+
+Simulateur d'opération de marchand de biens : plan de financement (Emplois / Ressources), apport nécessaire, prix de revient au m² et trois scénarios de revente. Application Next.js installable (PWA), 100 % côté client.
+
+## Démarrer
+
+```bash
+pnpm install
+pnpm dev          # développement (service worker désactivé)
+pnpm test         # tests du moteur (Vitest)
+pnpm build        # next build + génération du service worker (Serwist)
+pnpm start        # serveur Node standard
+pnpm build:static # export statique dans out/ (hébergement de fichiers, sans Node)
+```
+
+## Architecture
+
+```
+lib/simulateur/
+  params.ts        taux et pourcentages (seul endroit où ils sont définis)
+  types.ts         Inputs, Outputs, Scenario
+  engine.ts        computeFaisabilite(inputs, params) → outputs (fonction pure)
+  scenarios.ts     computeScenario(outputs, inputs, prixM2) (formules de l'Excel d'origine)
+  format.ts        formatage €, %, m² et saisie
+  state.ts         état de saisie, validation, lien de partage (fragment)
+  *.test.ts        cas A, B, C (parité Notion / Excel) et invariants
+components/simulateur/  UI (sections 01 à 05, guide d'installation, graphiques)
+components/charts/      composants Bklit UI (registre shadcn), voir « Écarts » ci-dessous
+app/sw.ts               service worker (précache du shell → fonctionne hors ligne)
+public/pwa-install-animation.html  animation d'installation iOS (rebrandée La Relève)
+```
+
+## Confidentialité
+
+- Aucun chiffre ne quitte l'appareil : pas d'API, pas de base de données, pas d'analytics.
+- La simulation en cours est sauvegardée dans `localStorage` (clé `simulateur:v1`).
+- Le lien « Partager » encode la simulation dans le fragment (`#s=…`), jamais transmis au serveur ; il est retiré de l'URL après chargement.
+- Open Sans est auto-hébergée au build (`next/font`), aucune requête vers Google au runtime.
+
+## Modifications apportées aux composants Bklit
+
+Les composants sont copiés dans le projet par le registre shadcn et ont été ajustés :
+
+- `bar.tsx` / `bar-chart.tsx` : prise en charge des valeurs négatives (domaine sous zéro, barres depuis la ligne 0), couleur par barre (`getFill`) pour afficher une marge négative en rouge, correction de la largeur des barres horizontales empilées.
+- `sankey-node.tsx` : prop `formatValue` (le libellé par défaut affichait « sessions »).
