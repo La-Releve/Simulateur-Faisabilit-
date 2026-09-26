@@ -43,7 +43,7 @@ function useShare(state: SimState, onCopied: () => void) {
     const text = `${SHARE_MESSAGE}\n\n${url}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Simulation de faisabilité — La Relève", text });
+        await navigator.share({ title: "Simulation de faisabilité ⎜ La Relève", text });
       } catch {
         // partage annulé
       }

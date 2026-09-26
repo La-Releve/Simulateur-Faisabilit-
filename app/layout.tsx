@@ -25,7 +25,7 @@ function siteUrl(): URL {
 
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
-  title: "Simulateur de Faisabilité — La Relève",
+  title: "Simulateur de Faisabilité ⎜ La Relève",
   description:
     "Simulez le plan de financement et la rentabilité d'une opération de marchand de biens. Calcul 100 % local, aucune donnée ne quitte votre appareil.",
   applicationName: "La Relève",
@@ -45,12 +45,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     siteName: "La Relève",
-    title: "Simulateur de Faisabilité — La Relève",
+    title: "Simulateur de Faisabilité ⎜ La Relève",
     description: "Plan de financement, apport nécessaire et prix de revente d'une opération de marchand de biens.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Simulateur de Faisabilité — La Relève",
+    title: "Simulateur de Faisabilité ⎜ La Relève",
     description: "Plan de financement, apport nécessaire et prix de revente d'une opération de marchand de biens.",
   },
   formatDetection: { telephone: false },

@@ -4,7 +4,7 @@ export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Simulateur de Faisabilité — La Relève",
+    name: "Simulateur de Faisabilité ⎜ La Relève",
     short_name: "La Relève",
     description: "Plan de financement et rentabilité d'une opération de marchand de biens.",
     lang: "fr",
