@@ -132,7 +132,16 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
           </div>
         ) : null}
 
-        <h2 id="install-title" className="pr-10 text-2xl leading-tight font-extrabold">
+        {/* Sur iPhone, titre sur une seule ligne : taille proportionnelle à la largeur de la feuille
+            (la croix est placée sur l'animation, pas de marge à lui réserver). */}
+        <h2
+          id="install-title"
+          className={
+            ios
+              ? "text-[min(24px,calc((min(100vw,440px)-40px)*0.052))] leading-tight font-extrabold tracking-[-0.025em] whitespace-nowrap"
+              : "pr-10 text-2xl leading-tight font-extrabold"
+          }
+        >
           {inApp
             ? "Ouvre ce lien dans Safari pour installer l'app"
             : ios
