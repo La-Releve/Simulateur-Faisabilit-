@@ -31,6 +31,33 @@ import { useTheme } from "./use-theme";
 
 const P = PARAMS;
 
+/**
+ * Partage de la simulation : feuille de partage native (iOS / Android / navigateurs compatibles)
+ * avec un message pré-rédigé, sinon copie du message et du lien.
+ * Le lien est intégré au texte (plutôt que passé en `url`) : certaines apps le colleraient sur
+ * la même ligne ; les messageries le détectent et affichent quand même l'aperçu.
+ */
+function useShare(state: SimState, onCopied: () => void) {
+  return async function share() {
+    const url = shareUrl(state, window.location.origin, window.location.pathname);
+    const text = `${SHARE_MESSAGE}\n\n${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Simulation de faisabilité — La Relève", text });
+      } catch {
+        // partage annulé
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      onCopied();
+    } catch {
+      window.prompt("Copie ce lien :", url);
+    }
+  };
+}
+
 const SHARE_MESSAGE =
   "Hello,\nJe viens de faire cette simulation pour un bien, je te laisse regarder pour qu'on en discute";
 
@@ -143,6 +170,7 @@ export function Simulateur() {
             </div>
             {result ? <DetailSection inputs={result.inputs} outputs={result.outputs} /> : null}
             {result ? <FinancementSection inputs={result.inputs} outputs={result.outputs} /> : null}
+            {result ? <ShareCta state={state} onCopied={() => toast.show("Lien copié")} /> : null}
           </div>
         </div>
       </main>
@@ -157,6 +185,24 @@ export function Simulateur() {
           onClose={install.dismiss}
         />
       ) : null}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Partage (bas de page) */
+
+function ShareCta({ state, onCopied }: { state: SimState; onCopied: () => void }) {
+  const share = useShare(state, onCopied);
+  return (
+    <div className="flex justify-center pt-2">
+      <button
+        type="button"
+        onClick={share}
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange px-6 text-base font-semibold text-white transition-[filter] hover:brightness-110 sm:w-auto"
+      >
+        <Share className="size-4" />
+        Partager ma simulation
+      </button>
     </div>
   );
 }
@@ -177,29 +223,7 @@ function Header({
   onCopied: () => void;
 }) {
   const { theme, toggle } = useTheme();
-
-  // Feuille de partage native (iOS / Android / navigateurs compatibles) avec un message
-  // pré-rédigé ; sinon copie du message et du lien.
-  async function share() {
-    const url = shareUrl(state, window.location.origin, window.location.pathname);
-    // Le lien est intégré au texte (plutôt que passé en `url`) : certaines apps le colleraient
-    // sur la même ligne ; les messageries le détectent et affichent quand même l'aperçu.
-    const text = `${SHARE_MESSAGE}\n\n${url}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Simulation de faisabilité — La Relève", text });
-      } catch {
-        // partage annulé
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      onCopied();
-    } catch {
-      window.prompt("Copie ce lien :", url);
-    }
-  }
+  const share = useShare(state, onCopied);
 
   function confirmReset() {
     if (window.confirm("Effacer la simulation en cours ?")) onReset();
@@ -283,7 +307,7 @@ function InputsSection({
   return (
     <section id="formulaire" className="card scroll-mt-4" aria-labelledby="s01">
       <div className="mb-6 flex flex-col gap-2">
-        <span className="eyebrow">01 — Le bien</span>
+        <span className="eyebrow">01 ⎜ Le bien</span>
         <h2 id="s01" className="text-2xl font-extrabold text-fg">
           L&apos;opération
         </h2>
@@ -552,7 +576,6 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
         index="05"
         eyebrow="Le plan de financement"
         title="D'où vient l'argent, où il va"
-        subtitle="Les deux côtés s'équilibrent : c'est le tableau Ressources / Emplois que demandent les banques."
       />
       <div className="card !p-3 md:!p-6">
         <FinancementSankey outputs={o} prixAcquisition={inputs.prixAcquisition} travaux={inputs.travaux} />
@@ -560,8 +583,8 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
       {/* Deux colonnes dès 360 px : sur mobile, libellé au-dessus de la valeur pour tenir en largeur */}
       <div className="mt-4 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-4">
         <div className="card max-md:!p-4">
-          <h3 className="text-lg leading-tight font-extrabold text-fg md:text-2xl">D&apos;où vient l&apos;argent</h3>
-          <p className="label-key mt-1 mb-3 md:mb-4">Ressources</p>
+          <h3 className="text-lg leading-tight font-extrabold text-fg md:text-2xl">Ressources</h3>
+          <p className="label-key mt-1 mb-3 md:mb-4">D&apos;où vient l&apos;argent</p>
           <div>
             <Row stackOnMobile label="Prêt bancaire acquisition" value={formatEur(o.pretAcquisition)} />
             <Row stackOnMobile label="Prêt bancaire travaux" value={formatEur(o.pretTravaux)} />
@@ -576,8 +599,8 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
           </div>
         </div>
         <div className="card max-md:!p-4">
-          <h3 className="text-lg leading-tight font-extrabold text-fg md:text-2xl">Où va l&apos;argent</h3>
-          <p className="label-key mt-1 mb-3 md:mb-4">Emplois</p>
+          <h3 className="text-lg leading-tight font-extrabold text-fg md:text-2xl">Emplois</h3>
+          <p className="label-key mt-1 mb-3 md:mb-4">Où va l&apos;argent</p>
           <div>
             <Row stackOnMobile label="Acquisition" value={formatEur(inputs.prixAcquisition)} />
             <Row stackOnMobile label="Travaux" value={formatEur(inputs.travaux)} />

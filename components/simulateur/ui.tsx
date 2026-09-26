@@ -5,7 +5,7 @@ export function SectionTitle({ index, eyebrow, title, subtitle }: { index: strin
   return (
     <div className="mb-5 flex flex-col gap-2">
       <span className="eyebrow">
-        {index} — {eyebrow}
+        {index} ⎜ {eyebrow}
       </span>
       <h2 id={`s${index}`} className="text-2xl leading-tight font-extrabold text-fg md:text-[30px]">
         {title}
