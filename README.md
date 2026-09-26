@@ -28,6 +28,7 @@ components/simulateur/  UI (sections 01 à 05, guide d'installation, graphiques)
 components/charts/      composants Bklit UI (registre shadcn), voir « Écarts » ci-dessous
 app/sw.ts               service worker (précache du shell → fonctionne hors ligne)
 public/pwa-install-animation.html  animation d'installation iOS (rebrandée La Relève)
+assets/                 sources non servies (favicon, avatars, icônes iOS) ; versions optimisées dans public/
 ```
 
 ## Confidentialité

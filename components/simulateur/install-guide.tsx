@@ -12,7 +12,7 @@ interface InstallGuideProps {
   onClose: () => void;
 }
 
-/** Glyphe Partager d'iOS (square.and.arrow.up), identique à celui de l'animation. */
+/** Glyphe Partager d'iOS (assets/ios-icons/square.and.arrow.up.svg). */
 function ShareIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 433.35 670.654" fill="currentColor" aria-hidden="true" className={className}>
@@ -22,19 +22,19 @@ function ShareIcon({ className }: { className?: string }) {
   );
 }
 
-/** Glyphe « plus.app » d'iOS (carré arrondi + plus), tel qu'affiché devant « Sur l'écran d'accueil ». */
+/** Glyphe « plus.app » d'iOS (assets/ios-icons/plus.app.svg). */
 function PlusAppIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true" className={className}>
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <path d="M12 8v8M8 12h8" />
+    <svg viewBox="0 0 450.195 449.951" fill="currentColor" aria-hidden="true" className={className}>
+      <path d="M132.812 449.951L317.139 449.951C360.107 449.951 393.555 437.5 415.527 415.527C438.232 393.066 450.195 359.619 450.195 316.895L450.195 133.057C450.195 90.332 438.232 56.8848 415.527 34.4238C393.311 12.207 360.107 0 317.139 0L132.812 0C90.0879 0 56.3965 12.4512 34.4238 34.4238C11.9629 56.8848 0 90.332 0 133.057L0 316.895C0 359.619 11.7188 393.066 34.4238 415.527C56.6406 437.744 90.0879 449.951 132.812 449.951ZM132.812 410.645C102.539 410.645 78.8574 402.1 63.4766 386.719C47.6074 371.094 39.3066 347.656 39.3066 316.895L39.3066 133.057C39.3066 102.295 47.6074 78.8574 63.4766 63.2324C78.6133 48.0957 102.539 39.3066 132.812 39.3066L317.139 39.3066C347.656 39.3066 371.094 47.8516 386.719 63.2324C402.588 78.8574 410.889 102.295 410.889 133.057L410.889 316.895C410.889 347.656 402.588 371.094 386.719 386.719C371.338 401.855 347.656 410.645 317.139 410.645Z" />
+      <path d="M245.605 316.895L245.605 132.324C245.605 119.873 237.061 111.328 224.854 111.328C212.891 111.328 204.834 119.873 204.834 132.324L204.834 316.895C204.834 329.102 212.891 337.646 224.854 337.646C237.061 337.646 245.605 329.346 245.605 316.895ZM133.057 244.873L317.627 244.873C329.834 244.873 338.379 236.816 338.379 224.854C338.379 212.646 329.834 204.102 317.627 204.102L133.057 204.102C120.361 204.102 112.061 212.646 112.061 224.854C112.061 236.816 120.605 244.873 133.057 244.873Z" />
     </svg>
   );
 }
 
 const STEPS = [
   { text: "Clique sur Partager", icon: <ShareIcon className="h-[18px] w-auto" /> },
-  { text: "Clique sur « Sur l'écran d'accueil »", icon: <PlusAppIcon className="size-[18px]" /> },
+  { text: "Clique sur « Sur l'écran d'accueil »", icon: <PlusAppIcon className="size-[17px]" /> },
   { text: "« Ajouter »", icon: null },
 ];
 

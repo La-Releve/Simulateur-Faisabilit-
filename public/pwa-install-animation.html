@@ -278,14 +278,13 @@ body{
 .t-morph-menu .row::-webkit-scrollbar{ display:none; }
 .t-morph-menu .contact{ width:78px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:8px; }
 .t-morph-menu .avatar{ position:relative; width:70px; height:70px; border-radius:100px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:500; }
-.t-morph-menu .avatar-initials{ font-size:26px; font-weight:600; letter-spacing:.5px; }
 .t-morph-menu .avatar img{ width:100%; height:100%; object-fit:cover; border-radius:100px; display:block; }
 .t-morph-menu .badge{ position:absolute; width:20px; height:20px; right:2px; bottom:0; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px; overflow:hidden; background:#fff; box-shadow:0 0 0 1.5px rgba(255,255,255,0.9); }
 .t-morph-menu .badge img{ width:100%; height:100%; object-fit:contain; display:block; }
 .t-morph-menu .icon-messages{ background:linear-gradient(180deg,#5BF675,#1FAD3B); color:#fff; }
 .t-morph-menu .contact .names{ text-align:center; line-height:1.25; }
 .t-morph-menu .contact .fn,
-.t-morph-menu .contact .ln{ font-size:12px; letter-spacing:0.06px; color:#000; display:block; }
+.t-morph-menu .contact .ln{ font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:78px; letter-spacing:0.06px; color:#000; display:block; }
 .t-morph-menu .app{ width:78px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:8px; }
 .t-morph-menu .app-icon{ width:70px; height:70px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:30px; }
 .t-morph-menu .app-name{ font-size:11px; letter-spacing:0.06px; color:#000; text-align:center; }
@@ -616,34 +615,28 @@ body{
 
           <div class="row">
             <div class="contact">
-              <div class="avatar avatar-initials" style="background:linear-gradient(180deg,#8e8e93cc,#8e8e93)">CM
+              <div class="avatar"><img src="/pwa-anim/avatars/anais-remaoun.jpg" alt="Anaïs Remaoun">
                 <div class="badge"><img src="/pwa-anim/messages.png" alt="Messages"></div>
               </div>
-              <div class="names"><span class="fn">Camille</span><span class="ln">Martin</span></div>
+              <div class="names"><span class="fn">Anaïs</span><span class="ln">Remaoun</span></div>
             </div>
             <div class="contact">
-              <div class="avatar avatar-initials" style="background:linear-gradient(180deg,#5e5ce6cc,#5e5ce6)">JM
+              <div class="avatar"><img src="/pwa-anim/avatars/romain-desnoyers.jpg" alt="Romain Desnoyers">
                 <div class="badge"><img src="/pwa-anim/messages.png" alt="Messages"></div>
               </div>
-              <div class="names"><span class="fn">Julien</span><span class="ln">Moreau</span></div>
+              <div class="names"><span class="fn">Romain</span><span class="ln">Desnoyers</span></div>
             </div>
             <div class="contact">
-              <div class="avatar avatar-initials" style="background:linear-gradient(180deg,#30b0c7cc,#30b0c7)">SL
+              <div class="avatar"><img src="/pwa-anim/avatars/pierre-emmanuel-weil.jpg" alt="Pierre-Emmanuel Weil">
                 <div class="badge"><img src="/pwa-anim/messages.png" alt="Messages"></div>
               </div>
-              <div class="names"><span class="fn">Sarah</span><span class="ln">Lefèvre</span></div>
+              <div class="names"><span class="fn">Pierre-Emmanuel</span><span class="ln">Weil</span></div>
             </div>
             <div class="contact">
-              <div class="avatar avatar-initials" style="background:linear-gradient(180deg,#34c759cc,#34c759)">AR
+              <div class="avatar"><img src="/pwa-anim/avatars/antoine-renard.jpg" alt="Antoine Renard">
                 <div class="badge"><img src="/pwa-anim/messages.png" alt="Messages"></div>
               </div>
-              <div class="names"><span class="fn">Antoine</span><span class="ln">Roux</span></div>
-            </div>
-            <div class="contact">
-              <div class="avatar avatar-initials" style="background:linear-gradient(180deg,#ff9f0acc,#ff9f0a)">LF
-                <div class="badge"><img src="/pwa-anim/messages.png" alt="Messages"></div>
-              </div>
-              <div class="names"><span class="fn">Léa</span><span class="ln">Fontaine</span></div>
+              <div class="names"><span class="fn">Antoine</span><span class="ln">Renard</span></div>
             </div>
           </div>
 
@@ -725,7 +718,7 @@ body{
 
       <div class="hs-apps">
         <div class="hs-row"><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/claude.webp" alt="Claude"></div><div class="hs-name">Claude</div></div><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/qonto.png" alt="Qonto"></div><div class="hs-name">Qonto</div></div><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/notion-calendar.png" alt="Notion Cal."></div><div class="hs-name">Notion Cal.</div></div><div class="hs-app"><div class="hs-ico on-white"><img src="/pwa-anim/linkedin.png" alt="LinkedIn"></div><div class="hs-name">LinkedIn</div></div></div>
-        <div class="hs-row"><div class="hs-app"><div class="hs-ico on-white"><img src="/pwa-anim/whatsapp.png" alt="WhatsApp"></div><div class="hs-name">WhatsApp</div></div><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/gmail.webp" alt="Gmail"></div><div class="hs-name">Gmail</div></div><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/calculator.png" alt="Calculette"></div><div class="hs-name">Calculette</div></div>
+        <div class="hs-row"><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/whatsapp.svg" alt="WhatsApp"></div><div class="hs-name">WhatsApp</div></div><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/gmail.webp" alt="Gmail"></div><div class="hs-name">Gmail</div></div><div class="hs-app"><div class="hs-ico"><img src="/pwa-anim/calculator.webp" alt="Calculette"></div><div class="hs-name">Calculette</div></div>
           <div class="hs-app installed" id="hsNotion">
             <div class="hs-ico" id="hsNotionIco"><img src="/icons/icon-512.png" alt="La Relève"></div>
             <div class="hs-name">La Relève</div>
@@ -890,7 +883,7 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
         else if(key.k==='shift'){ b.innerHTML=shift; }
         else if(key.k==='del'){ b.innerHTML=del; }
         else if(key.k==='123'){ b.textContent='123'; }
-        else if(key.k==='emoji'){ b.textContent='😀'; }
+        else if(key.k==='emoji'){ b.innerHTML='<svg width="22" height="22" viewBox="0 0 498.047 498.291" fill="#1b1b1b" aria-hidden="true"><path d="M249.023 498.047C386.475 498.047 498.047 386.475 498.047 249.023C498.047 111.572 386.475 0 249.023 0C111.572 0 0 111.572 0 249.023C0 386.475 111.572 498.047 249.023 498.047ZM249.023 456.543C134.277 456.543 41.5039 363.77 41.5039 249.023C41.5039 134.277 134.277 41.5039 249.023 41.5039C363.77 41.5039 456.543 134.277 456.543 249.023C456.543 363.77 363.77 456.543 249.023 456.543Z"/><path d="M248.779 371.338C299.805 371.338 333.984 337.402 333.984 321.289C333.984 315.43 328.369 312.744 323.242 315.186C305.42 324.951 284.18 335.938 248.779 335.938C213.379 335.938 192.139 324.707 174.561 315.186C169.189 312.744 163.574 315.43 163.574 321.289C163.574 337.402 197.754 371.338 248.779 371.338ZM176.514 227.295C191.895 227.295 205.566 213.379 205.566 193.848C205.566 174.072 192.139 160.156 176.514 160.156C161.133 160.156 147.705 174.072 147.705 193.848C147.705 213.379 161.133 227.295 176.514 227.295ZM321.289 227.295C336.67 227.295 350.342 213.379 350.342 193.848C350.342 174.072 336.914 160.156 321.289 160.156C305.908 160.156 292.48 174.072 292.48 193.848C292.48 213.379 305.908 227.295 321.289 227.295Z"/></svg>'; b.setAttribute('aria-label','Emoji'); }
       }
       r.appendChild(b);
     });
