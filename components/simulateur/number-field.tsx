@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { formatInputDraft } from "@/lib/simulateur/format";
 import { cn } from "@/lib/utils";
+import { AutoHeight } from "./auto-height";
 
 interface NumberFieldProps {
   id: string;
@@ -69,8 +70,8 @@ export function NumberField({
   }, [value]);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-center justify-between gap-2">
+    <div className={cn("flex flex-col", className)}>
+      <div className="mb-2 flex items-center justify-between gap-2">
         <label htmlFor={id} className="truncate text-sm text-text-secondary">
           {label}
         </label>
@@ -80,7 +81,7 @@ export function NumberField({
         className={cn(
           "flex items-center rounded-xl border bg-field transition-colors focus-within:border-orange",
           invalid ? "border-negative/70" : attention ? "border-orange/80" : "border-line-strong",
-          compact ? "h-11 px-3" : "h-12 px-3.5",
+          compact ? "h-11 px-3" : "h-12 px-3",
           adornment && "pr-1.5",
         )}
       >
@@ -104,12 +105,13 @@ export function NumberField({
           className="tabular min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-fg/25"
         />
         {adornment ? (
-          <div className="ml-2 shrink-0">{adornment}</div>
+          <div className="ml-1.5 shrink-0">{adornment}</div>
         ) : suffix ? (
           <span className="ml-2 shrink-0 text-sm text-text-muted">{suffix}</span>
         ) : null}
       </div>
-      {help ? <div className="text-[13px] font-light text-text-secondary">{help}</div> : null}
+      {/* Texte d'aide (ex. « Soit 22 500 € ») : apparaît / disparaît avec un card resize */}
+      <AutoHeight>{help ? <div className="pt-2 text-[13px] font-light text-text-secondary">{help}</div> : null}</AutoHeight>
     </div>
   );
 }

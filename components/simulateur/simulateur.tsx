@@ -32,6 +32,9 @@ import { useTheme } from "./use-theme";
 
 const P = PARAMS;
 
+const SHARE_MESSAGE =
+  "Hello,\nJe viens de faire cette simulation pour un bien, je te laisse regarder pour qu'on en discute";
+
 // Simulation d'exemple affichée floutée tant que le formulaire n'est pas complet.
 const DEMO_STATE: SimState = {
   ...DEFAULT_STATE,
@@ -106,7 +109,7 @@ export function Simulateur() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start">
           <aside className="lg:sticky lg:top-6">
             <InputsSection state={state} update={update} validation={validation} highlight={highlight} />
           </aside>
@@ -177,19 +180,23 @@ function Header({
 }) {
   const { theme, toggle } = useTheme();
 
-  // Feuille de partage native (iOS / Android / navigateurs compatibles), sinon copie du lien.
+  // Feuille de partage native (iOS / Android / navigateurs compatibles) avec un message
+  // pré-rédigé ; sinon copie du message et du lien.
   async function share() {
     const url = shareUrl(state, window.location.origin, window.location.pathname);
+    // Le lien est intégré au texte (plutôt que passé en `url`) : certaines apps le colleraient
+    // sur la même ligne ; les messageries le détectent et affichent quand même l'aperçu.
+    const text = `${SHARE_MESSAGE}\n\n${url}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Simulation de faisabilité — La Relève", url });
+        await navigator.share({ title: "Simulation de faisabilité — La Relève", text });
       } catch {
         // partage annulé
       }
       return;
     }
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(text);
       onCopied();
     } catch {
       window.prompt("Copie ce lien :", url);
@@ -284,7 +291,7 @@ function InputsSection({
         </h2>
       </div>
       <div className="flex flex-col gap-5">
-        <div className="grid grid-cols-2 items-start gap-3">
+        <div className="grid grid-cols-1 items-start gap-3 min-[360px]:grid-cols-2">
           <NumberField
             id="prix"
             label="Prix hors FAI"
@@ -307,7 +314,7 @@ function InputsSection({
             help={surfaceZero ? <span className="text-negative">Doit être supérieure à 0</span> : undefined}
           />
         </div>
-        <div className="grid grid-cols-2 items-start gap-3">
+        <div className="grid grid-cols-1 items-start gap-3 min-[360px]:grid-cols-2">
           <NumberField
             id="travaux"
             label="Travaux TTC"

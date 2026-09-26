@@ -32,9 +32,10 @@ describe("state", () => {
       travaux: "1\u00a0300\u00a0000",
     };
 
-    it("code court (cas C)", () => {
-      expect(encodeShareCode(casC)).toBe("1.qsi80.gz4.25ecn4.c.pdw");
-      expect(shareUrl(casC, "https://simulateur.lareleve.io")).toBe("https://simulateur.lareleve.io/#s=1.qsi80.gz4.25ecn4.c.pdw");
+    it("code court (cas C, valeurs par défaut omises)", () => {
+      expect(encodeShareCode(casC)).toBe("9n80.64.rv34");
+      expect(shareUrl(casC, "https://simulateur.lareleve.io")).toBe("https://simulateur.lareleve.io/#9n80.64.rv34");
+      expect(readShareHash("#9n80.64.rv34")).toEqual(casC);
     });
 
     it("aller-retour avec décimales, frais en €, durée et prix de vente saisis", () => {
@@ -46,13 +47,24 @@ describe("state", () => {
         agence: "12\u00a0000",
         ventes: { pessimiste: "", realiste: "11\u00a0000", optimiste: "" },
       };
-      expect(readShareHash("#s=" + encodeShareCode(s))).toEqual(s);
+      expect(encodeShareCode(s)).toBe("9n80.2d_5.rv34.i.e99c..8hk");
+      expect(readShareHash("#" + encodeShareCode(s))).toEqual(s);
+    });
+
+    it("frais d'agence en % autres que 5 %", () => {
+      const s = { ...casC, agence: "3,5" };
+      expect(encodeShareCode(s)).toBe("9n80.64.rv34..3_5");
+      expect(readShareHash("#" + encodeShareCode(s))).toEqual(s);
+    });
+
+    it("frais d'agence vides → 0 (et non la valeur par défaut)", () => {
+      expect(readShareHash("#" + encodeShareCode({ ...casC, agence: "" }))?.agence).toBe("0");
     });
 
     it("rejette les liens invalides", () => {
-      expect(readShareHash("#s=2.abc")).toBeNull();
-      expect(readShareHash("#s=1.<script>")).toBeNull();
-      expect(readShareHash("#autre")).toBeNull();
+      expect(readShareHash("#<script>.1")).toBeNull();
+      expect(readShareHash("#formulaire")).toBeNull();
+      expect(readShareHash("")).toBeNull();
     });
   });
 });

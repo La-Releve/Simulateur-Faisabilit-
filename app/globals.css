@@ -40,6 +40,7 @@
   --flow-weak: #3f3f46;
   /* Cases de saisie : légèrement plus claires que la carte en sombre, plus grises en clair */
   --field-bg: rgba(255, 255, 255, 0.05);
+  --tabs-inset-bg: rgba(255, 255, 255, 0.1); /* segmented intégré dans un champ */
   /* Scénarios de sortie */
   --case-worst: #ef4444;
   --case-middle: #ff711f;
@@ -132,6 +133,7 @@
   --flow-center: #3f3f46;
   --flow-weak: #d4d4d8;
   --field-bg: #f1f1f3;
+  --tabs-inset-bg: #e1e1e6;
   --case-worst: #dc2626;
   --case-middle: #ea580c;
   --case-best: #16a34a;
@@ -244,7 +246,12 @@
     background: var(--surface-card);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
+  }
+  @media (min-width: 400px) {
+    .card {
+      padding: 24px;
+    }
   }
   @media (min-width: 768px) {
     .card {
@@ -336,6 +343,16 @@
   border-radius: 48px;
   background: var(--tabs-bar-bg);
 }
+/* Variante intégrée dans une case de saisie : fond contrasté par rapport au champ */
+.t-tabs--inset {
+  --tabs-bar-bg: var(--tabs-inset-bg);
+  gap: 2px;
+  padding: 2px;
+}
+.t-tabs--inset .t-tabs-pill {
+  top: 2px;
+  bottom: 2px;
+}
 .t-tab {
   position: relative;
   appearance: none;
@@ -381,6 +398,23 @@
   opacity: 0.55;
   pointer-events: none;
   user-select: none;
+}
+
+/* Card resize (transitions.dev 01) — tween de la hauteur quand le contenu change */
+:root {
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.t-resize {
+  overflow: hidden;
+  transition: height var(--resize-dur) var(--resize-ease);
+  will-change: height;
+}
+.t-resize > .t-resize-inner {
+  transition: opacity var(--resize-dur) var(--resize-ease);
+}
+.t-resize[data-empty="true"] > .t-resize-inner {
+  opacity: 0;
 }
 
 /* Texts reveal — montée floutée décalée (titre + sous-titre) */
@@ -522,7 +556,9 @@
   .t-acc-panel,
   .t-acc-panel-inner,
   .t-acc-chevron,
-  .preview-blur {
+  .preview-blur,
+  .t-resize,
+  .t-resize > .t-resize-inner {
     transition: none !important;
   }
   .t-stagger-line {

@@ -16,7 +16,6 @@ export interface SimState {
 }
 
 export const STORAGE_KEY = "simulateur:v1";
-export const SHARE_PREFIX = "#s=";
 
 export const DEFAULT_STATE: SimState = {
   v: 1,
@@ -88,57 +87,64 @@ export function toInputs(s: SimState): Validation {
 
 /* ------------------------------------------------------------------ Lien de partage
  * Sans base de données, la simulation voyage dans l'URL elle-même, sous une forme compacte
- * qui ressemble à un identifiant : chaque nombre est multiplié par 100 (décimales conservées)
- * puis écrit en base 36. Elle est placée dans le fragment (#s=…), que le navigateur n'envoie
- * jamais au serveur : aucune donnée n'apparaît dans les logs d'hébergement.
+ * qui ressemble à un identifiant, placée dans le fragment (#…) : le navigateur ne l'envoie
+ * jamais au serveur, aucune donnée n'apparaît dans les logs d'hébergement.
  *
- * Format v1 : 1.<prix>.<surface>.<travaux>.<durée>.<p|e><agence>.<pessimiste>.<réaliste>.<optimiste>
- * Un prix de vente vide = prix proposé automatiquement ; les champs vides de fin sont omis.
- * Ex. 450 000 € / 220 m² / 1 300 000 € / 12 mois / 5 % → #s=1.qsi80.gz4.25ecn4.c.pdw
+ * Format : <prix>.<surface>.<travaux>.<durée>.<agence>.<worst>.<middle>.<best>
+ * - nombres en base 36 ; décimales éventuelles après « _ » (85,5 m² → 2d_5)
+ * - durée vide = 12 mois ; agence vide = 5 %, sinon « e » + montant € ou pourcentage seul
+ * - prix de vente vide = prix proposé automatiquement ; les champs vides de fin sont omis
+ * Ex. 450 000 € / 220 m² / 1 300 000 € / 12 mois / 5 % → #9n80.64.rv34
  */
-const SHARE_VERSION = "1";
+const DEFAULT_AGENCE_PCT = 5;
 
 function encodeNumber(raw: string): string {
   const n = parseInput(raw);
-  return n === null || n < 0 ? "" : Math.round(n * 100).toString(36);
+  if (n === null || n < 0) return "";
+  const [int, dec = ""] = String(Math.round(n * 100) / 100).split(".");
+  return Number(int).toString(36) + (dec ? "_" + dec : "");
 }
 
 function decodeNumber(code: string): string {
   if (code === "") return "";
-  if (!/^[0-9a-z]{1,12}$/.test(code)) throw new Error("code invalide");
-  const n = parseInt(code, 36) / 100;
-  return formatInputDraft(String(n).replace(".", ","));
+  const m = /^([0-9a-z]{1,10})(?:_(\d{1,2}))?$/.exec(code);
+  if (!m) throw new Error("code invalide");
+  return formatInputDraft(parseInt(m[1], 36) + (m[2] ? "," + m[2] : ""));
 }
 
 export function encodeShareCode(s: SimState): string {
+  const agence = parseInput(s.agence) ?? 0;
   const parts = [
-    SHARE_VERSION,
     encodeNumber(s.prixAcquisition),
     encodeNumber(s.surface),
     encodeNumber(s.travaux),
-    s.duree.toString(36),
-    (s.modeAgence === "pct" ? "p" : "e") + encodeNumber(s.agence),
+    s.duree === DEFAULT_STATE.duree ? "" : s.duree.toString(36),
+    s.modeAgence === "pct" && agence === DEFAULT_AGENCE_PCT
+      ? ""
+      : (s.modeAgence === "eur" ? "e" : "") + (encodeNumber(s.agence) || "0"),
     encodeNumber(s.ventes.pessimiste),
     encodeNumber(s.ventes.realiste),
     encodeNumber(s.ventes.optimiste),
   ];
-  while (parts.length > 6 && parts[parts.length - 1] === "") parts.pop();
+  while (parts.length > 0 && parts[parts.length - 1] === "") parts.pop();
   return parts.join(".");
 }
 
 export function decodeShareCode(code: string): SimState | null {
   try {
-    const [version, prix, surface, travaux, duree, agence = "p", pess = "", real = "", opt = ""] = code.split(".");
-    if (version !== SHARE_VERSION) return null;
+    const parts = code.split(".");
+    if (parts.length > 8) return null;
+    const [prix = "", surface = "", travaux = "", duree = "", agence = "", worst = "", middle = "", best = ""] = parts;
+    const eur = agence.startsWith("e");
     return sanitizeState({
       v: 1,
-      prixAcquisition: decodeNumber(prix ?? ""),
-      surface: decodeNumber(surface ?? ""),
-      travaux: decodeNumber(travaux ?? ""),
-      duree: parseInt(duree ?? "", 36),
-      modeAgence: agence[0] === "e" ? "eur" : "pct",
-      agence: decodeNumber(agence.slice(1)),
-      ventes: { pessimiste: decodeNumber(pess), realiste: decodeNumber(real), optimiste: decodeNumber(opt) },
+      prixAcquisition: decodeNumber(prix),
+      surface: decodeNumber(surface),
+      travaux: decodeNumber(travaux),
+      duree: duree === "" ? DEFAULT_STATE.duree : parseInt(duree, 36),
+      modeAgence: eur ? "eur" : "pct",
+      agence: agence === "" ? DEFAULT_STATE.agence : decodeNumber(eur ? agence.slice(1) : agence),
+      ventes: { pessimiste: decodeNumber(worst), realiste: decodeNumber(middle), optimiste: decodeNumber(best) },
     });
   } catch {
     return null;
@@ -146,10 +152,12 @@ export function decodeShareCode(code: string): SimState | null {
 }
 
 export function shareUrl(s: SimState, origin: string, pathname = "/"): string {
-  return `${origin}${pathname}${SHARE_PREFIX}${encodeShareCode(s)}`;
+  return `${origin}${pathname}#${encodeShareCode(s)}`;
 }
 
-/** Lit une simulation partagée depuis le fragment de l'URL (#s=…), ou null. */
+/** Lit une simulation partagée depuis le fragment de l'URL (#9n80.64.rv34), ou null. */
 export function readShareHash(hash: string): SimState | null {
-  return hash.startsWith(SHARE_PREFIX) ? decodeShareCode(hash.slice(SHARE_PREFIX.length)) : null;
+  const code = hash.replace(/^#/, "");
+  if (!/^[0-9a-z_.]+$/.test(code) || !code.includes(".")) return null;
+  return decodeShareCode(code);
 }

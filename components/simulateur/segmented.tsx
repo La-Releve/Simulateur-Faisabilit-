@@ -69,7 +69,12 @@ export function Segmented<T extends string | number>({
   }, []);
 
   return (
-    <div ref={barRef} role="radiogroup" aria-label={ariaLabel} className={cn("t-tabs", className)}>
+    <div
+      ref={barRef}
+      role="radiogroup"
+      aria-label={ariaLabel}
+      className={cn("t-tabs", size === "xs" && "t-tabs--inset", className)}
+    >
       <span ref={pillRef} className="t-tabs-pill" aria-hidden="true" />
       {options.map((o) => (
         <button
@@ -80,7 +85,7 @@ export function Segmented<T extends string | number>({
           onClick={() => onChange(o.value)}
           className={cn(
             "t-tab flex-1 font-semibold whitespace-nowrap",
-            size === "xs" ? "h-7 min-w-8 px-2.5 text-xs" : "h-9 px-1.5 text-[13px]",
+            size === "xs" ? "h-[26px] min-w-6 px-1.5 text-xs" : "h-9 px-1.5 text-[13px]",
           )}
         >
           {o.label}

@@ -10,7 +10,12 @@ const openSans = Open_Sans({
   display: "swap",
 });
 
+// URL publique du site : nécessaire pour que l'image Open Graph soit référencée en absolu
+// (aperçus de lien dans Messages, WhatsApp, LinkedIn…). À définir au déploiement.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://simulateur.lareleve.io";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Simulateur de Faisabilité — La Relève",
   description:
     "Simulez le plan de financement et la rentabilité d'une opération de marchand de biens. Calcul 100 % local, aucune donnée ne quitte votre appareil.",
@@ -26,6 +31,18 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "La Relève",
+    title: "Simulateur de Faisabilité — La Relève",
+    description: "Plan de financement, apport nécessaire et prix de revente d'une opération de marchand de biens.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Simulateur de Faisabilité — La Relève",
+    description: "Plan de financement, apport nécessaire et prix de revente d'une opération de marchand de biens.",
   },
   formatDetection: { telephone: false },
   other: { "apple-mobile-web-app-capable": "yes" },
