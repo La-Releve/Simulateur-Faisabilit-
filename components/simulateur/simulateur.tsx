@@ -1,19 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Download, Moon, RotateCcw, Sun } from "lucide-react";
+import { ArrowUp, Download, Moon, RotateCcw, Sun } from "lucide-react";
 import { computeFaisabilite } from "@/lib/simulateur/engine";
 import {
   formatEur,
   formatEurM2,
+  formatInputDraft,
   formatPctInt,
   formatRate,
   parseInput,
 } from "@/lib/simulateur/format";
 import { DUREES, PARAMS } from "@/lib/simulateur/params";
 import { computeScenario, SCENARIOS, type ScenarioKey } from "@/lib/simulateur/scenarios";
-import { toInputs, type SimState } from "@/lib/simulateur/state";
+import { DEFAULT_STATE, toInputs, type SimState } from "@/lib/simulateur/state";
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
 import { Accordion } from "./accordion";
@@ -31,6 +32,27 @@ import { useTheme } from "./use-theme";
 
 const P = PARAMS;
 
+// Simulation d'exemple affichée floutée tant que le formulaire n'est pas complet.
+const DEMO_STATE: SimState = {
+  ...DEFAULT_STATE,
+  prixAcquisition: "300 000",
+  surface: "100",
+  travaux: "100 000",
+  ventes: { pessimiste: "4 500", realiste: "5 200", optimiste: "5 800" },
+};
+const DEMO_VALIDATION = toInputs(DEMO_STATE);
+const DEMO_RESULT = DEMO_VALIDATION.ok
+  ? { inputs: DEMO_VALIDATION.inputs, outputs: computeFaisabilite(DEMO_VALIDATION.inputs) }
+  : null;
+const noop = () => {};
+
+// Champs obligatoires dans l'ordre du formulaire
+const REQUIRED_FIELDS = [
+  ["prixAcquisition", "prix"],
+  ["surface", "surface"],
+  ["travaux", "travaux"],
+] as const;
+
 export function Simulateur() {
   const { state, update, reset } = useSimulation();
   const install = useInstall();
@@ -41,6 +63,20 @@ export function Simulateur() {
     () => (validation.ok ? { inputs: validation.inputs, outputs: computeFaisabilite(validation.inputs) } : null),
     [validation],
   );
+  const preview = result === null;
+  const shown = result ?? DEMO_RESULT!;
+  const [highlight, setHighlight] = useState(false);
+
+  // Aperçu flouté → ramène au formulaire et place le curseur dans le premier champ manquant.
+  // Le focus est synchrone (geste utilisateur) pour que le clavier s'ouvre sur iOS.
+  function goToForm() {
+    const missing = validation.ok ? [] : validation.missing;
+    const target = REQUIRED_FIELDS.find(([key]) => missing.includes(key))?.[1] ?? "prix";
+    document.getElementById(target)?.focus({ preventScroll: true });
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("formulaire")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    setHighlight(true);
+  }
 
   return (
     <div className="min-h-dvh pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
@@ -66,12 +102,38 @@ export function Simulateur() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
           <aside className="lg:sticky lg:top-6">
-            <InputsSection state={state} update={update} validation={validation} />
+            <InputsSection state={state} update={update} validation={validation} highlight={highlight} />
           </aside>
 
           <div className="flex min-w-0 flex-col gap-12">
-            <KpiSection result={result} validation={validation} />
-            <ScenariosSection state={state} update={update} result={result} />
+            <div className="relative">
+              <div
+                className={cn("preview-blur flex flex-col gap-12", preview && "is-preview")}
+                aria-hidden={preview || undefined}
+                inert={preview}
+              >
+                <KpiSection outputs={shown.outputs} />
+                <ScenariosSection
+                  state={preview ? DEMO_STATE : state}
+                  update={preview ? noop : update}
+                  result={shown}
+                />
+              </div>
+              {preview ? (
+                <button
+                  type="button"
+                  onClick={goToForm}
+                  className="absolute inset-0 z-10 flex cursor-pointer flex-col items-center rounded-2xl"
+                >
+                  <span className="sticky top-[40dvh] mt-24 flex max-w-[calc(100%-2rem)] items-center gap-3 rounded-2xl border border-line-strong bg-elevated py-3 pr-5 pl-3 text-left text-sm font-semibold text-fg shadow-lg">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange text-white">
+                      <ArrowUp className="size-4 lg:-rotate-90" />
+                    </span>
+                    <span className="text-balance">Complète les valeurs pour obtenir la simulation</span>
+                  </span>
+                </button>
+              ) : null}
+            </div>
             {result ? <FinancementSection inputs={result.inputs} outputs={result.outputs} /> : null}
             {result ? <DetailSection inputs={result.inputs} outputs={result.outputs} /> : null}
           </div>
@@ -163,14 +225,26 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
 type Update = <K extends keyof SimState>(key: K, value: SimState[K]) => void;
 type Validation = ReturnType<typeof toInputs>;
 
-function InputsSection({ state, update, validation }: { state: SimState; update: Update; validation: Validation }) {
+function InputsSection({
+  state,
+  update,
+  validation,
+  highlight,
+}: {
+  state: SimState;
+  update: Update;
+  validation: Validation;
+  /** Met en évidence les champs obligatoires manquants (après clic sur l'aperçu flouté). */
+  highlight: boolean;
+}) {
+  const missing = validation.ok ? [] : validation.missing;
   const prix = parseInput(state.prixAcquisition);
   const surface = parseInput(state.surface);
   const prixM2 = prix !== null && surface ? prix / surface : null;
   const surfaceZero = !validation.ok && validation.surfaceZero;
 
   return (
-    <section className="card" aria-labelledby="s01">
+    <section id="formulaire" className="card scroll-mt-4" aria-labelledby="s01">
       <div className="mb-6 flex flex-col gap-2">
         <span className="eyebrow">01 — Le bien</span>
         <h2 id="s01" className="text-2xl font-extrabold text-fg">
@@ -178,33 +252,74 @@ function InputsSection({ state, update, validation }: { state: SimState; update:
         </h2>
       </div>
       <div className="flex flex-col gap-5">
-        <NumberField
-          id="prix"
-          label="Prix d'acquisition (hors FAI)"
-          value={state.prixAcquisition}
-          onChange={(v) => update("prixAcquisition", v)}
-          suffix="€"
-          placeholder="300 000"
-          help={prixM2 !== null ? `Soit ${formatEurM2(prixM2)} à l'achat` : undefined}
-        />
-        <NumberField
-          id="surface"
-          label="Surface habitable"
-          value={state.surface}
-          onChange={(v) => update("surface", v)}
-          suffix="m²"
-          placeholder="100"
-          invalid={surfaceZero}
-          help={surfaceZero ? <span className="text-negative">La surface doit être supérieure à 0.</span> : undefined}
-        />
-        <NumberField
-          id="travaux"
-          label="Travaux (TTC)"
-          value={state.travaux}
-          onChange={(v) => update("travaux", v)}
-          suffix="€"
-          placeholder="100 000"
-        />
+        <div className="grid grid-cols-2 items-start gap-3">
+          <NumberField
+            id="prix"
+            label="Prix hors FAI"
+            value={state.prixAcquisition}
+            onChange={(v) => update("prixAcquisition", v)}
+            suffix="€"
+            placeholder="300 000"
+            attention={missing.includes("prixAcquisition") && highlight}
+            help={prixM2 !== null ? `Soit ${formatEurM2(prixM2)}` : undefined}
+          />
+          <NumberField
+            id="surface"
+            label="Surface"
+            value={state.surface}
+            onChange={(v) => update("surface", v)}
+            suffix="m²"
+            placeholder="100"
+            invalid={surfaceZero}
+            attention={missing.includes("surface") && highlight}
+            help={surfaceZero ? <span className="text-negative">Doit être supérieure à 0</span> : undefined}
+          />
+        </div>
+        <div className="grid grid-cols-2 items-start gap-3">
+          <NumberField
+            id="travaux"
+            label="Travaux TTC"
+            value={state.travaux}
+            onChange={(v) => update("travaux", v)}
+            suffix="€"
+            placeholder="100 000"
+            attention={missing.includes("travaux") && highlight}
+          />
+          <NumberField
+            id="agence"
+            label="Frais d'agence"
+            value={state.agence}
+            onChange={(v) => update("agence", v)}
+            placeholder="0"
+            adornment={
+              <Segmented
+                ariaLabel="Unité des frais d'agence"
+                size="xs"
+                options={[
+                  { value: "pct" as const, label: "%" },
+                  { value: "eur" as const, label: "€" },
+                ]}
+                value={state.modeAgence}
+                onChange={(v) => {
+                  if (v === state.modeAgence) return;
+                  // Conversion de la valeur saisie pour garder le même montant
+                  const val = parseInput(state.agence);
+                  if (val !== null && prix) {
+                    const converted = v === "eur" ? (val / 100) * prix : (val / prix) * 100;
+                    const rounded = v === "eur" ? Math.round(converted) : Math.round(converted * 100) / 100;
+                    update("agence", formatInputDraft(String(rounded).replace(".", ",")));
+                  }
+                  update("modeAgence", v);
+                }}
+              />
+            }
+            help={
+              state.modeAgence === "pct" && prix
+                ? `Soit ${formatEur(((parseInput(state.agence) ?? 0) / 100) * prix)}`
+                : undefined
+            }
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <span className="text-sm text-text-secondary" id="duree-label">
             Durée de l&apos;opération
@@ -214,44 +329,9 @@ function InputsSection({ state, update, validation }: { state: SimState; update:
             options={DUREES.map((d) => ({ value: d, label: `${d} mois` }))}
             value={state.duree}
             onChange={(v) => update("duree", v)}
-            className="w-full"
+            className="w-full border border-line-strong"
           />
         </div>
-        <NumberField
-          id="agence"
-          label="Frais d'agence"
-          value={state.agence}
-          onChange={(v) => update("agence", v)}
-          suffix={state.modeAgence === "pct" ? "%" : "€"}
-          placeholder="0"
-          trailing={
-            <Segmented
-              ariaLabel="Unité des frais d'agence"
-              size="sm"
-              options={[
-                { value: "pct" as const, label: "%" },
-                { value: "eur" as const, label: "€" },
-              ]}
-              value={state.modeAgence}
-              onChange={(v) => {
-                if (v === state.modeAgence) return;
-                // Conversion de la valeur saisie pour garder le même montant
-                const val = parseInput(state.agence);
-                if (val !== null && prix) {
-                  const converted = v === "eur" ? (val / 100) * prix : (val / prix) * 100;
-                  const rounded = v === "eur" ? Math.round(converted) : Math.round(converted * 100) / 100;
-                  update("agence", String(rounded).replace(".", ","));
-                }
-                update("modeAgence", v);
-              }}
-            />
-          }
-          help={
-            state.modeAgence === "pct" && prix
-              ? `Soit ${formatEur(((parseInput(state.agence) ?? 0) / 100) * prix)}`
-              : undefined
-          }
-        />
       </div>
     </section>
   );
@@ -261,58 +341,31 @@ function InputsSection({ state, update, validation }: { state: SimState; update:
 
 type Result = { inputs: Inputs; outputs: Outputs } | null;
 
-const MISSING_LABELS = {
-  prixAcquisition: "Prix d'acquisition",
-  surface: "Surface m²",
-  travaux: "Coût des travaux",
-};
 
-function KpiSection({ result, validation }: { result: Result; validation: Validation }) {
-  const o = result?.outputs;
+function KpiSection({ outputs: o }: { outputs: Outputs }) {
   return (
     <section aria-labelledby="s02">
       <SectionTitle index="02" eyebrow="L'essentiel" title="Ce que coûte l'opération" />
-      {!o ? (
-        <div className="mb-4 rounded-2xl border border-accent-soft-2 bg-accent-soft px-5 py-4 text-sm text-text-secondary">
-          <p className="font-semibold text-fg">Complète ces valeurs pour commencer :</p>
-          <ol className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1">
-            {(["prixAcquisition", "surface", "travaux"] as const).map((k, i) => (
-              <li
-                key={k}
-                className={cn(!validation.ok && validation.missing.includes(k) ? "text-fg" : "text-text-muted line-through")}
-              >
-                {i + 1}. {MISSING_LABELS[k]}
-              </li>
-            ))}
-          </ol>
-        </div>
-      ) : null}
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <Kpi
           label="Coût total de l'opération"
-          value={o ? <AnimatedNumber kind="eur" value={o.totalReelInclDetteObligataire} /> : "—"}
-          sub={o ? `dont ${formatEur(o.E2_sousTotal + o.E3_sousTotal)} de frais` : undefined}
+          value={<AnimatedNumber kind="eur" value={o.totalReelInclDetteObligataire} />}
+          sub={`dont ${formatEur(o.E2_sousTotal + o.E3_sousTotal)} de frais`}
         />
         <Kpi
           label="Apport nécessaire"
-          value={o ? <AnimatedNumber kind="eur" value={o.apportTotal} /> : "—"}
-          sub={
-            o ? (
-              <>
-                Fonds propres {formatEur(o.fondsPropres)} · Dette obligataire {formatEur(o.detteObligataire)}
-              </>
-            ) : undefined
-          }
+          value={<AnimatedNumber kind="eur" value={o.apportTotal} />}
+          sub={`Fonds propres ${formatEur(o.fondsPropres)} · Dette obligataire ${formatEur(o.detteObligataire)}`}
         />
         <Kpi
           label="Prix de revient au m²"
-          value={o ? <AnimatedNumber kind="eurM2" value={o.prixRevientM2} /> : "—"}
-          sub={o ? "Seuil de rentabilité à la revente" : undefined}
+          value={<AnimatedNumber kind="eurM2" value={o.prixRevientM2} />}
+          sub="Seuil de rentabilité à la revente"
         />
         <Kpi
           label="Loan to Cost"
-          value={o ? <AnimatedNumber kind="pctInt" value={o.loanToCost} /> : "—"}
-          sub={o ? <LtcGauge value={o.loanToCost} /> : undefined}
+          value={<AnimatedNumber kind="pctInt" value={o.loanToCost} />}
+          sub={<LtcGauge value={o.loanToCost} />}
         />
       </div>
     </section>
@@ -331,12 +384,11 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
 
 /* ---------------------------------------------------------------- 03 — La revente */
 
-function ScenariosSection({ state, update, result }: { state: SimState; update: Update; result: Result }) {
+function ScenariosSection({ state, update, result }: { state: SimState; update: Update; result: NonNullable<Result> }) {
   const scenarios = useMemo(() => {
     return SCENARIOS.map(({ key, label }) => {
       const prixM2 = parseInput(state.ventes[key]);
-      const scenario =
-        result && prixM2 !== null && prixM2 > 0 ? computeScenario(result.outputs, result.inputs, prixM2) : null;
+      const scenario = prixM2 !== null && prixM2 > 0 ? computeScenario(result.outputs, result.inputs, prixM2) : null;
       return { key, label, scenario };
     });
   }, [state.ventes, result]);
@@ -350,14 +402,10 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
         eyebrow="La revente"
         title="À quel prix revendre ?"
         subtitle={
-          result ? (
-            <>
-              Seuil de rentabilité :{" "}
-              <AnimatedNumber kind="eurM2" value={result.outputs.prixRevientM2} className="font-semibold text-orange" />
-            </>
-          ) : (
-            "Saisis un prix de vente au m² pour chaque scénario."
-          )
+          <>
+            Seuil de rentabilité :{" "}
+            <AnimatedNumber kind="eurM2" value={result.outputs.prixRevientM2} className="font-semibold text-orange" />
+          </>
         }
       />
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
@@ -384,14 +432,14 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
 
       <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         {scenarios.map(({ key, label, scenario }) => (
-          <ScenarioCard key={key} label={label} scenario={scenario} ready={result !== null} />
+          <ScenarioCard key={key} label={label} scenario={scenario} />
         ))}
       </div>
     </section>
   );
 }
 
-function ScenarioCard({ label, scenario, ready }: { label: string; scenario: Scenario | null; ready: boolean }) {
+function ScenarioCard({ label, scenario }: { label: string; scenario: Scenario | null }) {
   const negative = scenario !== null && scenario.margeBrute < 0;
   return (
     <div className="flex flex-col rounded-2xl border border-line bg-surface p-5">
@@ -421,7 +469,7 @@ function ScenarioCard({ label, scenario, ready }: { label: string; scenario: Sce
         </>
       ) : (
         <p className="py-4 text-sm font-light text-text-muted">
-          {ready ? "Saisis un prix de vente au m² pour voir ce scénario." : "Complète d'abord le bien (section 01)."}
+          Saisis un prix de vente au m² pour voir ce scénario.
         </p>
       )}
     </div>

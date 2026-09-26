@@ -8,11 +8,15 @@ interface SegmentedProps<T extends string | number> {
   value: T;
   onChange: (value: T) => void;
   ariaLabel: string;
-  size?: "sm" | "md";
+  size?: "xs" | "md";
   className?: string;
 }
 
-/** Segmented control en pills : la pastille orange glisse vers l'option active (transitions.dev « Tabs sliding »). */
+/**
+ * Segmented control (transitions.dev « Tabs sliding ») : la pastille glisse vers l'option active.
+ * Au premier rendu et au redimensionnement, la pastille est placée sans transition ; seuls les
+ * changements de sélection sont animés.
+ */
 export function Segmented<T extends string | number>({
   options,
   value,
@@ -25,58 +29,63 @@ export function Segmented<T extends string | number>({
   const pillRef = useRef<HTMLSpanElement>(null);
   const placed = useRef(false);
 
-  useLayoutEffect(() => {
+  // Déplace la pastille sous l'onglet actif, animée ou non.
+  const moveTo = (animate: boolean) => {
     const bar = barRef.current;
     const pill = pillRef.current;
-    if (!bar || !pill) return;
-
-    const move = (animate: boolean) => {
-      const tab = bar.querySelector<HTMLElement>('[aria-checked="true"]');
-      if (!tab) return;
-      if (!animate) pill.style.transition = "none";
+    const tab = bar?.querySelector<HTMLElement>('[aria-checked="true"]');
+    if (!bar || !pill || !tab) return;
+    if (!animate) {
+      const prev = pill.style.transition;
+      pill.style.transition = "none";
       pill.style.transform = `translateX(${tab.offsetLeft}px)`;
       pill.style.width = `${tab.offsetWidth}px`;
-      if (!animate) {
-        void pill.offsetWidth; // applique la position avant de réactiver la transition
-        pill.style.transition = "";
-      }
-    };
+      void pill.offsetWidth; // force le reflow avant de rétablir la transition
+      pill.style.transition = prev;
+    } else {
+      pill.style.transform = `translateX(${tab.offsetLeft}px)`;
+      pill.style.width = `${tab.offsetWidth}px`;
+    }
+  };
 
-    // Premier placement et redimensionnements : sans animation
-    move(placed.current);
+  // Changement de sélection : animé (sauf tout premier placement)
+  useLayoutEffect(() => {
+    moveTo(placed.current);
     placed.current = true;
-    const ro = new ResizeObserver(() => move(false));
+  });
+
+  // Redimensionnement (police chargée, rotation, largeur de colonne) : replacement sans animation
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    let last = bar.offsetWidth;
+    const ro = new ResizeObserver(() => {
+      if (bar.offsetWidth === last) return; // ignore l'appel initial et les notifications sans effet
+      last = bar.offsetWidth;
+      moveTo(false);
+    });
     ro.observe(bar);
     return () => ro.disconnect();
-  }, [value]);
+  }, []);
 
   return (
-    <div
-      ref={barRef}
-      role="radiogroup"
-      aria-label={ariaLabel}
-      className={cn("relative inline-flex rounded-full border border-line-strong bg-surface p-1", className)}
-    >
+    <div ref={barRef} role="radiogroup" aria-label={ariaLabel} className={cn("t-tabs", className)}>
       <span ref={pillRef} className="t-tabs-pill" aria-hidden="true" />
-      {options.map((o) => {
-        const active = o.value === value;
-        return (
-          <button
-            key={String(o.value)}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => onChange(o.value)}
-            className={cn(
-              "t-tab flex-1 rounded-full font-semibold whitespace-nowrap",
-              size === "sm" ? "px-3 py-1 text-xs" : "px-1.5 py-2 text-[13px]",
-              active ? "text-white" : "text-text-secondary hover:text-fg",
-            )}
-          >
-            {o.label}
-          </button>
-        );
-      })}
+      {options.map((o) => (
+        <button
+          key={String(o.value)}
+          type="button"
+          role="radio"
+          aria-checked={o.value === value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            "t-tab flex-1 font-semibold whitespace-nowrap",
+            size === "xs" ? "h-7 min-w-8 px-2.5 text-xs" : "h-9 px-1.5 text-[13px]",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }

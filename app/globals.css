@@ -284,27 +284,70 @@
    Transitions (d'après transitions.dev, adaptées à la charte)
    ================================================================ */
 
-/* Tabs sliding — pastille active qui glisse entre les options */
-.t-tabs-pill {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 0;
-  width: 0;
-  border-radius: 9999px;
-  background: var(--color-burnt-orange);
-  transform: translateX(0);
-  transition:
-    transform var(--duration-fast) var(--ease-smooth-out),
-    width var(--duration-fast) var(--ease-smooth-out);
-  will-change: transform, width;
-  pointer-events: none;
-  z-index: 0;
+/* Tabs sliding (transitions.dev 16) — la pastille active glisse entre les options.
+   JS écrit offsetLeft / offsetWidth de l'onglet actif sur la pastille ; le CSS porte le tween. */
+:root {
+  --tabs-dur: 250ms;
+  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tabs-text-muted: var(--text-secondary);
+  --tabs-text-active: #ffffff;
+  --tabs-bar-bg: var(--surface-card);
+  --tabs-pill-bg: var(--color-burnt-orange);
+}
+.t-tabs {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 48px;
+  background: var(--tabs-bar-bg);
 }
 .t-tab {
   position: relative;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--tabs-text-muted);
+  cursor: pointer;
+  border-radius: 48px;
   z-index: 1;
-  transition: color var(--duration-fast) var(--ease-smooth-out);
+  transition: color var(--tabs-dur) var(--tabs-ease);
+}
+.t-tab:not([aria-checked="true"]):hover {
+  color: var(--text-primary);
+}
+.t-tab[aria-checked="true"] {
+  color: var(--tabs-text-active);
+}
+.t-tabs-pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  background: var(--tabs-pill-bg);
+  border-radius: 48px;
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Aperçu flouté des résultats tant que le formulaire est incomplet ; se dévoile en fondu */
+.preview-blur {
+  transition:
+    filter var(--duration-slow) var(--ease-smooth-out),
+    opacity var(--duration-slow) var(--ease-smooth-out);
+}
+.preview-blur.is-preview {
+  filter: blur(10px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Texts reveal — montée floutée décalée (titre + sous-titre) */
@@ -445,7 +488,8 @@
   .t-icon-swap > .t-icon,
   .t-acc-panel,
   .t-acc-panel-inner,
-  .t-acc-chevron {
+  .t-acc-chevron,
+  .preview-blur {
     transition: none !important;
   }
   .t-stagger-line {

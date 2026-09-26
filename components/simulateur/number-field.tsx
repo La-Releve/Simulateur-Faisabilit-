@@ -13,9 +13,13 @@ interface NumberFieldProps {
   help?: ReactNode;
   placeholder?: string;
   invalid?: boolean;
+  /** Attire l'œil sur un champ à compléter (bordure orange), sans signaler d'erreur. */
+  attention?: boolean;
   className?: string;
   compact?: boolean;
   trailing?: ReactNode;
+  /** Élément intégré à droite dans la case (remplace le suffixe), ex. bascule d'unité. */
+  adornment?: ReactNode;
 }
 
 /** Nombre de caractères significatifs (chiffres, virgule) avant la position donnée. */
@@ -42,9 +46,11 @@ export function NumberField({
   help,
   placeholder = "0",
   invalid,
+  attention,
   className,
   compact,
   trailing,
+  adornment,
 }: NumberFieldProps) {
   const ref = useRef<HTMLInputElement>(null);
   const caret = useRef<number | null>(null);
@@ -61,7 +67,7 @@ export function NumberField({
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={id} className="text-sm text-text-secondary">
+        <label htmlFor={id} className="truncate text-sm text-text-secondary">
           {label}
         </label>
         {trailing}
@@ -69,8 +75,9 @@ export function NumberField({
       <div
         className={cn(
           "flex items-center rounded-xl border bg-surface transition-colors focus-within:border-orange",
-          invalid ? "border-negative/70" : "border-line-strong",
-          compact ? "h-11 px-3" : "h-12 px-4",
+          invalid ? "border-negative/70" : attention ? "border-orange/80" : "border-line-strong",
+          compact ? "h-11 px-3" : "h-12 px-3.5",
+          adornment && "pr-1.5",
         )}
       >
         <input
@@ -90,7 +97,11 @@ export function NumberField({
           }}
           className="tabular min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-fg/25"
         />
-        {suffix ? <span className="ml-2 shrink-0 text-sm text-text-muted">{suffix}</span> : null}
+        {adornment ? (
+          <div className="ml-2 shrink-0">{adornment}</div>
+        ) : suffix ? (
+          <span className="ml-2 shrink-0 text-sm text-text-muted">{suffix}</span>
+        ) : null}
       </div>
       {help ? <div className="text-[13px] font-light text-text-secondary">{help}</div> : null}
     </div>
