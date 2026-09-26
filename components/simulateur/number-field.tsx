@@ -20,6 +20,8 @@ interface NumberFieldProps {
   trailing?: ReactNode;
   /** Élément intégré à droite dans la case (remplace le suffixe), ex. bascule d'unité. */
   adornment?: ReactNode;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 /** Nombre de caractères significatifs (chiffres, virgule) avant la position donnée. */
@@ -51,6 +53,8 @@ export function NumberField({
   compact,
   trailing,
   adornment,
+  onFocus,
+  onBlur,
 }: NumberFieldProps) {
   const ref = useRef<HTMLInputElement>(null);
   const caret = useRef<number | null>(null);
@@ -90,6 +94,8 @@ export function NumberField({
           placeholder={placeholder}
           value={value}
           aria-invalid={invalid || undefined}
+          onFocus={onFocus}
+          onBlur={onBlur}
           onChange={(e) => {
             const raw = e.target.value;
             caret.current = significantBefore(raw, e.target.selectionStart ?? raw.length);

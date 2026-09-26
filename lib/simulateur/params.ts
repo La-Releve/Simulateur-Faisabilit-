@@ -42,6 +42,16 @@ export const PARAMS: Params = {
   tauxStructurationObligataire: 0.05,
 };
 
+/**
+ * Prix de vente au m² proposé par défaut pour chaque scénario : prix de revient au m² majoré
+ * de cette marge (décimal). L'utilisateur peut remplacer la valeur proposée.
+ */
+export const MARGES_SCENARIOS = {
+  pessimiste: 0.1,
+  realiste: 0.15,
+  optimiste: 0.2,
+} as const;
+
 /** Durées d'opération proposées, en mois. */
 export const DUREES = [6, 12, 18, 24] as const;
 export const DUREE_DEFAUT = 12;

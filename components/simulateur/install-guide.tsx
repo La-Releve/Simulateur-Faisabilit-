@@ -42,6 +42,19 @@ const STEPS = [
 export function InstallGuide({ open, platform, canPromptInstall, onInstall, onClose }: InstallGuideProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [frameLoaded, setFrameLoaded] = useState(false);
+  const ios = platform === "ios-safari";
+
+  // L'animation est préchargée en pause dès le montage (iframe dans le <dialog> fermé) :
+  // à l'ouverture elle est déjà prête, on la relance simplement depuis le début.
+  const post = (type: "pwa-anim:play" | "pwa-anim:pause") => {
+    const win = frameRef.current?.contentWindow;
+    if (!win) return;
+    const bg = getComputedStyle(document.documentElement).getPropertyValue("--surface-elevated").trim();
+    win.postMessage({ type, bg }, window.location.origin);
+  };
+
   const [state, setState] = useState<"closed" | "open" | "closing">("closed");
 
   // transitions.dev « Modal open / close » : ouverture sur l'horloge lente, fermeture plus courte,
@@ -72,8 +85,12 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
     return () => clearTimeout(t);
   }, [open]);
 
+  // Après showModal (effet précédent) : l'iframe est visible, l'animation peut se mesurer et démarrer.
+  useEffect(() => {
+    if (ios && frameLoaded) post(open ? "pwa-anim:play" : "pwa-anim:pause");
+  }, [open, frameLoaded, ios]);
+
   const inApp = platform === "ios-inapp" || platform === "android-inapp";
-  const ios = platform === "ios-safari";
 
   return (
     <dialog
@@ -103,15 +120,15 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
           // Encastré : l'iframe (fond transparent) occupe le haut de la feuille, bord à bord ;
           // le téléphone « sort » du bord supérieur, sans encadré.
           <div className="-mx-5 -mt-5 mb-4 overflow-hidden rounded-t-3xl">
-            {open || state !== "closed" ? (
-              <iframe
-                src="/pwa-install-animation.html"
-                title="Animation : ajouter le simulateur à l'écran d'accueil depuis Safari"
-                className="block h-[420px] w-full border-0"
-                style={{ maxHeight: "52dvh" }}
-                loading="eager"
-              />
-            ) : null}
+            <iframe
+              ref={frameRef}
+              src="/pwa-install-animation.html#paused"
+              title="Animation : ajouter le simulateur à l'écran d'accueil depuis Safari"
+              onLoad={() => setFrameLoaded(true)}
+              className={`block h-[420px] w-full border-0 transition-opacity duration-(--duration-fast) ${frameLoaded ? "opacity-100" : "opacity-0"}`}
+              style={{ maxHeight: "52dvh" }}
+              loading="eager"
+            />
           </div>
         ) : null}
 

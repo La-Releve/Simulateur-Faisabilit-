@@ -12,8 +12,8 @@ import {
   formatRate,
   parseInput,
 } from "@/lib/simulateur/format";
-import { DUREES, PARAMS } from "@/lib/simulateur/params";
-import { computeScenario, SCENARIOS, type ScenarioKey } from "@/lib/simulateur/scenarios";
+import { DUREES, MARGES_SCENARIOS, PARAMS } from "@/lib/simulateur/params";
+import { computeScenario, prixVenteAutoM2, SCENARIOS, type ScenarioKey } from "@/lib/simulateur/scenarios";
 import { DEFAULT_STATE, toInputs, type SimState } from "@/lib/simulateur/state";
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,6 @@ const DEMO_STATE: SimState = {
   prixAcquisition: "300 000",
   surface: "100",
   travaux: "100 000",
-  ventes: { pessimiste: "4 500", realiste: "5 200", optimiste: "5 800" },
 };
 const DEMO_VALIDATION = toInputs(DEMO_STATE);
 const DEMO_RESULT = DEMO_VALIDATION.ok
@@ -385,15 +384,24 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
 /* ---------------------------------------------------------------- 03 — La revente */
 
 function ScenariosSection({ state, update, result }: { state: SimState; update: Update; result: NonNullable<Result> }) {
+  // Champ en cours d'édition : s'il est vidé, on le laisse vide tant qu'il a le focus
+  // (au lieu de réafficher aussitôt la valeur proposée), puis il revient à la proposition.
+  const [editing, setEditing] = useState<{ key: ScenarioKey; cleared: boolean } | null>(null);
+
   const scenarios = useMemo(() => {
     return SCENARIOS.map(({ key, label }) => {
-      const prixM2 = parseInput(state.ventes[key]);
+      const manual = state.ventes[key];
+      const auto = prixVenteAutoM2(result.outputs, key);
+      const isAuto = manual === "";
+      const cleared = editing?.key === key && editing.cleared;
+      const prixM2 = isAuto ? (cleared ? null : auto) : parseInput(manual);
+      const display = isAuto ? (cleared ? "" : formatInputDraft(String(auto))) : manual;
       const scenario = prixM2 !== null && prixM2 > 0 ? computeScenario(result.outputs, result.inputs, prixM2) : null;
-      return { key, label, scenario };
+      return { key, label, scenario, isAuto, display };
     });
-  }, [state.ventes, result]);
+  }, [state.ventes, result, editing]);
 
-  const filled = scenarios.filter((s): s is { key: ScenarioKey; label: string; scenario: Scenario } => s.scenario !== null);
+  const filled = scenarios.filter((s): s is (typeof scenarios)[number] & { scenario: Scenario } => s.scenario !== null);
 
   return (
     <section aria-labelledby="s03">
@@ -409,18 +417,40 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
         }
       />
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        {SCENARIOS.map(({ key, label }) => (
-          <NumberField
-            key={key}
-            id={`vente-${key}`}
-            label={label}
-            value={state.ventes[key]}
-            onChange={(v) => update("ventes", { ...state.ventes, [key]: v })}
-            suffix="€/m²"
-            placeholder="—"
-            compact
-          />
-        ))}
+        {scenarios.map(({ key, label, isAuto, display }) => {
+          const marge = formatRate(MARGES_SCENARIOS[key]);
+          return (
+            <NumberField
+              key={key}
+              id={`vente-${key}`}
+              label={label}
+              value={display}
+              onChange={(v) => {
+                setEditing({ key, cleared: v === "" });
+                update("ventes", { ...state.ventes, [key]: v });
+              }}
+              onFocus={() => setEditing({ key, cleared: false })}
+              onBlur={() => setEditing(null)}
+              suffix="€/m²"
+              placeholder="—"
+              compact
+              help={
+                isAuto ? (
+                  <span className="text-xs text-text-muted">Revient +{marge}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => update("ventes", { ...state.ventes, [key]: "" })}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-orange"
+                  >
+                    <RotateCcw className="size-3" />
+                    Revient +{marge}
+                  </button>
+                )
+              }
+            />
+          );
+        })}
       </div>
 
       {filled.length > 0 ? (
