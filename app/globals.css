@@ -38,6 +38,12 @@
   --flow-strong: #e4e4e7;
   --flow-center: #d4d4d8;
   --flow-weak: #3f3f46;
+  /* Cases de saisie : légèrement plus claires que la carte en sombre, plus grises en clair */
+  --field-bg: rgba(255, 255, 255, 0.05);
+  /* Scénarios de sortie */
+  --case-worst: #ef4444;
+  --case-middle: #ff711f;
+  --case-best: #22c55e;
 
   /* shadcn */
   --background: var(--page-bg);
@@ -125,6 +131,10 @@
   --flow-strong: #27272a;
   --flow-center: #3f3f46;
   --flow-weak: #d4d4d8;
+  --field-bg: #f1f1f3;
+  --case-worst: #dc2626;
+  --case-middle: #ea580c;
+  --case-best: #16a34a;
 
   --card: #ffffff;
   --popover: #ffffff;
@@ -209,6 +219,7 @@
   --color-text-label: var(--text-label);
   --color-fg: var(--text-primary);
   --color-elevated: var(--surface-elevated);
+  --color-field: var(--field-bg);
 }
 
 @layer base {
@@ -266,6 +277,28 @@
     padding: 2px 10px;
     white-space: nowrap;
   }
+  /* Pastilles de scénario : une couleur par degré */
+  .pill[data-case] {
+    color: var(--case-color);
+    background: color-mix(in srgb, var(--case-color) 12%, transparent);
+    border-color: color-mix(in srgb, var(--case-color) 32%, transparent);
+  }
+  [data-case="pessimiste"] {
+    --case-color: var(--case-worst);
+  }
+  [data-case="realiste"] {
+    --case-color: var(--case-middle);
+  }
+  [data-case="optimiste"] {
+    --case-color: var(--case-best);
+  }
+  .case-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--case-color);
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
   }
@@ -291,7 +324,7 @@
   --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --tabs-text-muted: var(--text-secondary);
   --tabs-text-active: #ffffff;
-  --tabs-bar-bg: var(--surface-card);
+  --tabs-bar-bg: var(--field-bg);
   --tabs-pill-bg: var(--color-burnt-orange);
 }
 .t-tabs {

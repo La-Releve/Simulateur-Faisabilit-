@@ -1,24 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DEFAULT_STATE, STORAGE_KEY, sanitizeState, type SimState } from "@/lib/simulateur/state";
+import { DEFAULT_STATE, STORAGE_KEY, readShareHash, sanitizeState, type SimState } from "@/lib/simulateur/state";
 
-/** État de la simulation, sauvegardé automatiquement dans localStorage (propre à l'appareil). */
+/**
+ * État de la simulation, sauvegardé automatiquement dans localStorage (propre à l'appareil).
+ * Un lien partagé (#s=…) est prioritaire : il est chargé puis retiré de l'URL.
+ */
 export function useSimulation() {
   const [state, setState] = useState<SimState>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
+  const [fromLink, setFromLink] = useState(false);
   const skipSave = useRef(true);
 
   useEffect(() => {
-    let loaded: SimState | null = null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      loaded = raw ? sanitizeState(JSON.parse(raw)) : null;
-    } catch {
-      loaded = null;
+    let loaded: SimState | null = readShareHash(window.location.hash);
+    if (loaded) {
+      history.replaceState(null, "", window.location.pathname);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture de l'URL au montage
+      setFromLink(true);
+    } else {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        loaded = raw ? sanitizeState(JSON.parse(raw)) : null;
+      } catch {
+        loaded = null;
+      }
     }
     // Restauration unique au montage depuis le stockage local (indisponible côté serveur).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (loaded) setState(loaded);
     setHydrated(true);
   }, []);
@@ -48,5 +57,5 @@ export function useSimulation() {
     setState(DEFAULT_STATE);
   }, []);
 
-  return { state, setState, update, reset, hydrated };
+  return { state, setState, update, reset, hydrated, fromLink };
 }

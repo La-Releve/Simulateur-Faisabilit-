@@ -1,5 +1,5 @@
 import { DUREE_DEFAUT, DUREES } from "./params";
-import { parseInput } from "./format";
+import { formatInputDraft, parseInput } from "./format";
 import type { Inputs, ModeAgence } from "./types";
 import type { ScenarioKey } from "./scenarios";
 
@@ -16,6 +16,7 @@ export interface SimState {
 }
 
 export const STORAGE_KEY = "simulateur:v1";
+export const SHARE_PREFIX = "#s=";
 
 export const DEFAULT_STATE: SimState = {
   v: 1,
@@ -83,4 +84,72 @@ export function toInputs(s: SimState): Validation {
       valeurAgence: s.modeAgence === "pct" ? agence / 100 : agence,
     },
   };
+}
+
+/* ------------------------------------------------------------------ Lien de partage
+ * Sans base de données, la simulation voyage dans l'URL elle-même, sous une forme compacte
+ * qui ressemble à un identifiant : chaque nombre est multiplié par 100 (décimales conservées)
+ * puis écrit en base 36. Elle est placée dans le fragment (#s=…), que le navigateur n'envoie
+ * jamais au serveur : aucune donnée n'apparaît dans les logs d'hébergement.
+ *
+ * Format v1 : 1.<prix>.<surface>.<travaux>.<durée>.<p|e><agence>.<pessimiste>.<réaliste>.<optimiste>
+ * Un prix de vente vide = prix proposé automatiquement ; les champs vides de fin sont omis.
+ * Ex. 450 000 € / 220 m² / 1 300 000 € / 12 mois / 5 % → #s=1.qsi80.gz4.25ecn4.c.pdw
+ */
+const SHARE_VERSION = "1";
+
+function encodeNumber(raw: string): string {
+  const n = parseInput(raw);
+  return n === null || n < 0 ? "" : Math.round(n * 100).toString(36);
+}
+
+function decodeNumber(code: string): string {
+  if (code === "") return "";
+  if (!/^[0-9a-z]{1,12}$/.test(code)) throw new Error("code invalide");
+  const n = parseInt(code, 36) / 100;
+  return formatInputDraft(String(n).replace(".", ","));
+}
+
+export function encodeShareCode(s: SimState): string {
+  const parts = [
+    SHARE_VERSION,
+    encodeNumber(s.prixAcquisition),
+    encodeNumber(s.surface),
+    encodeNumber(s.travaux),
+    s.duree.toString(36),
+    (s.modeAgence === "pct" ? "p" : "e") + encodeNumber(s.agence),
+    encodeNumber(s.ventes.pessimiste),
+    encodeNumber(s.ventes.realiste),
+    encodeNumber(s.ventes.optimiste),
+  ];
+  while (parts.length > 6 && parts[parts.length - 1] === "") parts.pop();
+  return parts.join(".");
+}
+
+export function decodeShareCode(code: string): SimState | null {
+  try {
+    const [version, prix, surface, travaux, duree, agence = "p", pess = "", real = "", opt = ""] = code.split(".");
+    if (version !== SHARE_VERSION) return null;
+    return sanitizeState({
+      v: 1,
+      prixAcquisition: decodeNumber(prix ?? ""),
+      surface: decodeNumber(surface ?? ""),
+      travaux: decodeNumber(travaux ?? ""),
+      duree: parseInt(duree ?? "", 36),
+      modeAgence: agence[0] === "e" ? "eur" : "pct",
+      agence: decodeNumber(agence.slice(1)),
+      ventes: { pessimiste: decodeNumber(pess), realiste: decodeNumber(real), optimiste: decodeNumber(opt) },
+    });
+  } catch {
+    return null;
+  }
+}
+
+export function shareUrl(s: SimState, origin: string, pathname = "/"): string {
+  return `${origin}${pathname}${SHARE_PREFIX}${encodeShareCode(s)}`;
+}
+
+/** Lit une simulation partagée depuis le fragment de l'URL (#s=…), ou null. */
+export function readShareHash(hash: string): SimState | null {
+  return hash.startsWith(SHARE_PREFIX) ? decodeShareCode(hash.slice(SHARE_PREFIX.length)) : null;
 }

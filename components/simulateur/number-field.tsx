@@ -78,7 +78,7 @@ export function NumberField({
       </div>
       <div
         className={cn(
-          "flex items-center rounded-xl border bg-surface transition-colors focus-within:border-orange",
+          "flex items-center rounded-xl border bg-field transition-colors focus-within:border-orange",
           invalid ? "border-negative/70" : attention ? "border-orange/80" : "border-line-strong",
           compact ? "h-11 px-3" : "h-12 px-3.5",
           adornment && "pr-1.5",

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowUp, Download, Moon, RotateCcw, Sun } from "lucide-react";
+import { ArrowUp, Download, Moon, RotateCcw, Share, Sun } from "lucide-react";
 import { computeFaisabilite } from "@/lib/simulateur/engine";
 import {
   formatEur,
@@ -14,12 +14,12 @@ import {
 } from "@/lib/simulateur/format";
 import { DUREES, MARGES_SCENARIOS, PARAMS } from "@/lib/simulateur/params";
 import { computeScenario, prixVenteAutoM2, SCENARIOS, type ScenarioKey } from "@/lib/simulateur/scenarios";
-import { DEFAULT_STATE, toInputs, type SimState } from "@/lib/simulateur/state";
+import { DEFAULT_STATE, shareUrl, toInputs, type SimState } from "@/lib/simulateur/state";
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
 import { Accordion } from "./accordion";
 import { AnimatedNumber } from "./animated-number";
-import { FinancementBars, FinancementSankey, LtcGauge, MargeBarChart } from "./charts";
+import { FinancementBars, FinancementSankey, LtcGauge } from "./charts";
 import { useMedia } from "./use-media";
 import { InstallGuide } from "./install-guide";
 import { NumberField } from "./number-field";
@@ -53,9 +53,14 @@ const REQUIRED_FIELDS = [
 ] as const;
 
 export function Simulateur() {
-  const { state, update, reset } = useSimulation();
+  const { state, update, reset, fromLink } = useSimulation();
   const install = useInstall();
   const toast = useToast();
+  const { show: showToast } = toast;
+
+  useEffect(() => {
+    if (fromLink) showToast("Simulation partagée chargée");
+  }, [fromLink, showToast]);
 
   const validation = useMemo(() => toInputs(state), [state]);
   const result = useMemo(
@@ -85,6 +90,8 @@ export function Simulateur() {
           toast.show("Nouvelle simulation");
         }}
         showInstall={install.ready && !install.standalone && install.platform !== "desktop"}
+        state={state}
+        onCopied={() => toast.show("Lien copié")}
         onInstall={() => (install.canPromptInstall && install.platform === "android" ? install.promptInstall() : install.openGuide())}
       />
 
@@ -159,12 +166,35 @@ function Header({
   onReset,
   showInstall,
   onInstall,
+  state,
+  onCopied,
 }: {
   onReset: () => void;
   showInstall: boolean;
   onInstall: () => void;
+  state: SimState;
+  onCopied: () => void;
 }) {
   const { theme, toggle } = useTheme();
+
+  // Feuille de partage native (iOS / Android / navigateurs compatibles), sinon copie du lien.
+  async function share() {
+    const url = shareUrl(state, window.location.origin, window.location.pathname);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Simulation de faisabilité — La Relève", url });
+      } catch {
+        // partage annulé
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      onCopied();
+    } catch {
+      window.prompt("Copie ce lien :", url);
+    }
+  }
 
   function confirmReset() {
     if (window.confirm("Effacer la simulation en cours ?")) onReset();
@@ -192,6 +222,9 @@ function Header({
           Installer l&apos;app
         </button>
       ) : null}
+      <IconButton label="Partager cette simulation" onClick={share}>
+        <Share className="size-4" />
+      </IconButton>
       <IconButton label={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"} onClick={toggle}>
         <span className="t-icon-swap" data-state={theme === "dark" ? "b" : "a"}>
           <Moon className="t-icon size-4" data-icon="a" />
@@ -401,8 +434,6 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
     });
   }, [state.ventes, result, editing]);
 
-  const filled = scenarios.filter((s): s is (typeof scenarios)[number] & { scenario: Scenario } => s.scenario !== null);
-
   return (
     <section aria-labelledby="s03">
       <SectionTitle
@@ -423,7 +454,12 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
             <NumberField
               key={key}
               id={`vente-${key}`}
-              label={label}
+              label={
+                <span className="inline-flex items-center gap-1.5" data-case={key}>
+                  <span className="case-dot" aria-hidden="true" />
+                  {label}
+                </span>
+              }
               value={display}
               onChange={(v) => {
                 setEditing({ key, cleared: v === "" });
@@ -453,28 +489,24 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
         })}
       </div>
 
-      {filled.length > 0 ? (
-        <div className="card mt-6 !p-4 md:!p-6">
-          <div className="label-key mb-2">Marge brute avant impôts par scénario</div>
-          <MargeBarChart items={filled.map((s) => ({ name: s.label, scenario: s.scenario }))} />
-        </div>
-      ) : null}
 
-      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+      <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         {scenarios.map(({ key, label, scenario }) => (
-          <ScenarioCard key={key} label={label} scenario={scenario} />
+          <ScenarioCard key={key} caseKey={key} label={label} scenario={scenario} />
         ))}
       </div>
     </section>
   );
 }
 
-function ScenarioCard({ label, scenario }: { label: string; scenario: Scenario | null }) {
+function ScenarioCard({ caseKey, label, scenario }: { caseKey: ScenarioKey; label: string; scenario: Scenario | null }) {
   const negative = scenario !== null && scenario.margeBrute < 0;
   return (
     <div className="flex flex-col rounded-2xl border border-line bg-surface p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="pill">{label}</span>
+        <span className="pill" data-case={caseKey}>
+          {label}
+        </span>
         {scenario ? <span className="tabular text-xs text-text-muted">{formatEurM2(scenario.prixVenteM2)}</span> : null}
       </div>
       {scenario ? (

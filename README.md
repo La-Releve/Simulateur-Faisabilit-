@@ -22,7 +22,7 @@ lib/simulateur/
   engine.ts        computeFaisabilite(inputs, params) → outputs (fonction pure)
   scenarios.ts     computeScenario(outputs, inputs, prixM2) (formules de l'Excel d'origine)
   format.ts        formatage €, %, m² et saisie
-  state.ts         état de saisie, validation
+  state.ts         état de saisie, validation, encodage du lien de partage
   *.test.ts        cas A, B, C (parité Notion / Excel) et invariants
 components/simulateur/  UI (sections 01 à 05, guide d'installation, graphiques)
 components/charts/      composants Bklit UI (registre shadcn), voir « Écarts » ci-dessous
@@ -35,6 +35,7 @@ assets/                 sources non servies (favicon, avatars, icônes iOS) ; ve
 
 - Aucun chiffre ne quitte l'appareil : pas d'API, pas de base de données, pas d'analytics.
 - La simulation en cours est sauvegardée dans `localStorage` (clé `simulateur:v1`).
+- Le bouton Partager ouvre la feuille de partage native avec un lien court du type `/#s=1.qsi80.gz4.25ecn4.c.pdw` : les valeurs saisies sont encodées dans l'URL (base 36, sans base de données) et placées dans le fragment `#`, que le navigateur n'envoie jamais au serveur. À l'ouverture, la simulation est chargée puis le fragment est retiré de l'URL.
 - Open Sans est auto-hébergée au build (`next/font`), aucune requête vers Google au runtime.
 
 ## Modifications apportées aux composants Bklit

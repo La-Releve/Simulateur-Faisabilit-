@@ -3,14 +3,12 @@
 import { useMemo } from "react";
 import { Bar } from "@/components/charts/bar";
 import { BarChart } from "@/components/charts/bar-chart";
-import { BarXAxis } from "@/components/charts/bar-x-axis";
 import { BarYAxis } from "@/components/charts/bar-y-axis";
 import { Gauge } from "@/components/charts/gauge";
-import { Grid } from "@/components/charts/grid";
 import { ChartTooltip } from "@/components/charts/tooltip";
 import { SankeyChart, SankeyLink, SankeyNode, SankeyTooltip, type SankeyData } from "@/components/charts/sankey";
-import { formatEur, formatEurSigned, formatPct1 } from "@/lib/simulateur/format";
-import type { Outputs, Scenario } from "@/lib/simulateur/types";
+import { formatEur } from "@/lib/simulateur/format";
+import type { Outputs } from "@/lib/simulateur/types";
 import { useMedia, useReducedMotion } from "./use-media";
 
 /* ---------- Sankey : plan de financement ---------- */
@@ -160,64 +158,6 @@ export function FinancementBars({ outputs: o, prixAcquisition, travaux }: { outp
         ))}
       </ul>
     </div>
-  );
-}
-
-/* ---------- Bar chart : marge par scénario ---------- */
-
-export interface ScenarioBarDatum {
-  name: string;
-  scenario: Scenario;
-}
-
-export function MargeBarChart({ items }: { items: ScenarioBarDatum[] }) {
-  const reduced = useReducedMotion();
-  const wide = useMedia("(min-width: 768px)");
-  const data = useMemo(
-    () =>
-      items.map((it) => ({
-        name: it.name,
-        marge: it.scenario.margeBrute,
-        rentabilite: it.scenario.rentabiliteSurCout,
-        prixVenteTotal: it.scenario.prixVenteTotal,
-      })),
-    [items],
-  );
-  const hasNegative = data.some((d) => d.marge < 0);
-
-  return (
-    <BarChart
-      data={data}
-      xDataKey="name"
-      aspectRatio={wide ? "3 / 1" : "16 / 9"}
-      barGap={wide ? 0.5 : 0.35}
-      margin={{ top: 16, right: 8, bottom: 32, left: 8 }}
-      animationDuration={reduced ? 0 : 700}
-    >
-      <Grid horizontal numTicksRows={4} highlightRowValues={hasNegative ? [0] : undefined} />
-      <Bar
-        dataKey="marge"
-        lineCap={6}
-        fill="var(--chart-1)"
-        getFill={(d) => ((d.marge as number) < 0 ? "var(--negative)" : "var(--chart-1)")}
-      />
-      <BarXAxis showAllLabels />
-      <ChartTooltip
-        showCrosshair={false}
-        showDots={false}
-        content={({ point }) => {
-          const marge = point.marge as number;
-          return (
-            <div className="min-w-44 px-3 py-2.5">
-              <div className="mb-1.5 text-xs font-semibold text-chart-tooltip-foreground">{String(point.name)}</div>
-              <TooltipLine label="Marge brute" value={formatEurSigned(marge)} negative={marge < 0} />
-              <TooltipLine label="Rentabilité" value={formatPct1(point.rentabilite as number)} negative={marge < 0} />
-              <TooltipLine label="Prix de vente" value={formatEur(point.prixVenteTotal as number)} />
-            </div>
-          );
-        }}
-      />
-    </BarChart>
   );
 }
 
