@@ -10,7 +10,6 @@ pnpm dev          # développement (service worker désactivé)
 pnpm test         # tests du moteur (Vitest)
 pnpm build        # next build + génération du service worker (Serwist)
 pnpm start        # serveur Node standard
-pnpm build:static # export statique dans out/ (hébergement de fichiers, sans Node)
 ```
 
 ## Architecture
@@ -33,7 +32,7 @@ assets/                 sources non servies (favicon, avatars, icônes iOS) ; ve
 
 ## Confidentialité
 
-- Aucun chiffre ne quitte l'appareil : pas d'API, pas de base de données, pas d'analytics.
+- Aucun chiffre saisi ne quitte l'appareil : le calcul est 100 % local.
 - La simulation en cours est sauvegardée dans `localStorage` (clé `simulateur:v1`).
 - Le bouton Partager ouvre la feuille de partage native avec un message pré-rédigé et un lien court du type `/#9n80.64.rv34` : les valeurs saisies sont encodées dans l'URL (base 36, valeurs par défaut omises, sans base de données) et placées dans le fragment `#`, que le navigateur n'envoie jamais au serveur. À l'ouverture, la simulation est chargée puis le fragment est retiré de l'URL.
 - Image Open Graph : `app/opengraph-image.png`. Son adresse absolue utilise `NEXT_PUBLIC_SITE_URL` (voir `.env.example`), ou à défaut le domaine de production fourni par Vercel ; la valeur étant intégrée au build, tout changement demande un redéploiement.
@@ -45,6 +44,14 @@ Les composants sont copiés dans le projet par le registre shadcn et ont été a
 
 - `bar.tsx` / `bar-chart.tsx` : prise en charge des valeurs négatives (domaine sous zéro, barres depuis la ligne 0), couleur par barre (`getFill`) pour afficher une marge négative en rouge, correction de la largeur des barres horizontales empilées.
 - `sankey-node.tsx` : prop `formatValue` (le libellé par défaut affichait « sessions »).
+
+## Suivi des usages
+
+Chaque action (visite, simulation réalisée, partage, ouverture d'un lien partagé, guide d'installation, installation, nouvelle simulation) crée une ligne dans une base Notion : phrase lisible, type, date, adresse IP, user agent, appareil. Aucun montant saisi n'est transmis.
+
+- Navigateur (`lib/tracking/client.ts`) : envoi silencieux en tâche de fond ; hors connexion ou en cas d'échec, file locale (50 actions, 7 jours) renvoyée au retour du réseau.
+- Serveur (`app/api/track/route.ts`) : répond immédiatement, puis écrit dans Notion après la réponse (`after`) ; même origine, robots ignorés, 60 actions / minute / IP.
+- Variables d'environnement (serveur uniquement) : `NOTION_API_KEY` (secret de l'intégration Notion, qui doit avoir accès à la base) et `NOTION_TRACKING_DATABASE_ID`. Sans elles, le suivi est simplement désactivé.
 
 ## Thème
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { track } from "@/lib/tracking/client";
 
 export const PWA_DISMISSED_KEY = "pwa-guide:dismissed";
 
@@ -64,6 +65,12 @@ export function useInstall() {
       setDeferred(e as BeforeInstallPromptEvent);
     };
     const onInstalled = () => {
+      track("app_installed");
+      // Android : l'app installée partage le stockage du navigateur ; sa première ouverture
+      // ne doit pas compter une seconde installation.
+      try {
+        localStorage.setItem("track:installed", "1");
+      } catch {}
       setDeferred(null);
       setStandalone(true);
       setOpen(false);
@@ -73,7 +80,10 @@ export function useInstall() {
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (!sa && (p === "ios-safari" || p === "ios-inapp" || p === "android-inapp") && !readDismissed()) {
-      timer = setTimeout(() => setOpen(true), 1000);
+      timer = setTimeout(() => {
+        setOpen(true);
+        track("install_guide_auto");
+      }, 1000);
     }
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
@@ -101,7 +111,10 @@ export function useInstall() {
     standalone,
     platform,
     open,
-    openGuide: () => setOpen(true),
+    openGuide: () => {
+      setOpen(true);
+      track("install_guide_manual");
+    },
     dismiss,
     canPromptInstall: deferred !== null,
     promptInstall,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowUp, Download, Moon, RotateCcw, Share, Sun } from "lucide-react";
 import { computeFaisabilite } from "@/lib/simulateur/engine";
@@ -17,6 +17,8 @@ import { computeScenario, prixVenteAutoM2, SCENARIOS, type ScenarioKey } from "@
 import { DEFAULT_STATE, shareUrl, toInputs, type SimState } from "@/lib/simulateur/state";
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
+import { flushTrackingQueue, track } from "@/lib/tracking/client";
+import { isStandalone } from "./use-install";
 import { Accordion } from "./accordion";
 import { FitText } from "./fit-text";
 import { AnimatedNumber } from "./animated-number";
@@ -38,13 +40,14 @@ const P = PARAMS;
  * Le lien est intégré au texte (plutôt que passé en `url`) : certaines apps le colleraient sur
  * la même ligne ; les messageries le détectent et affichent quand même l'aperçu.
  */
-function useShare(state: SimState, onCopied: () => void) {
+function useShare(state: SimState, onCopied: () => void, source: "share_header" | "share_bottom") {
   return async function share() {
     const url = shareUrl(state, window.location.origin, window.location.pathname);
     const text = `${SHARE_MESSAGE}\n\n${url}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "Simulation de faisabilité ⎜ La Relève", text });
+        track(source);
       } catch {
         // partage annulé
       }
@@ -53,6 +56,7 @@ function useShare(state: SimState, onCopied: () => void) {
     try {
       await navigator.clipboard.writeText(text);
       onCopied();
+      track(source);
     } catch {
       window.prompt("Copie ce lien :", url);
     }
@@ -83,13 +87,16 @@ const REQUIRED_FIELDS = [
 ] as const;
 
 export function Simulateur() {
-  const { state, update, reset, fromLink } = useSimulation();
+  const { state, update, reset, fromLink, hydrated } = useSimulation();
   const install = useInstall();
   const toast = useToast();
   const { show: showToast } = toast;
 
   useEffect(() => {
-    if (fromLink) showToast("Simulation partagée chargée");
+    if (fromLink) {
+      showToast("Simulation partagée chargée");
+      track("shared_link_open");
+    }
   }, [fromLink, showToast]);
 
   const validation = useMemo(() => toInputs(state), [state]);
@@ -98,6 +105,7 @@ export function Simulateur() {
     [validation],
   );
   const preview = result === null;
+  useUsageTracking(hydrated, result !== null, !state.prixAcquisition && !state.surface && !state.travaux);
   const shown = result ?? DEMO_RESULT!;
   const [highlight, setHighlight] = useState(false);
 
@@ -117,6 +125,7 @@ export function Simulateur() {
       <Header
         onReset={() => {
           reset();
+          track("new_simulation");
           toast.show("Nouvelle simulation");
         }}
         showInstall={install.ready && !install.standalone && install.platform !== "desktop"}
@@ -191,10 +200,55 @@ export function Simulateur() {
   );
 }
 
+/* ---------------------------------------------------------------- Suivi des usages */
+
+/**
+ * Visite (ou ouverture de l'app installée) au chargement, puis « simulation réalisée » quand
+ * les trois champs obligatoires deviennent complets à la suite d'une saisie : une simulation
+ * restaurée depuis l'appareil ou chargée depuis un lien partagé n'est pas comptée.
+ */
+function useUsageTracking(hydrated: boolean, complete: boolean, empty: boolean) {
+  const baseline = useRef<boolean | null>(null);
+  const counted = useRef(false);
+
+  useEffect(() => {
+    if (isStandalone()) {
+      let first = false;
+      try {
+        first = !localStorage.getItem("track:installed");
+        localStorage.setItem("track:installed", "1");
+      } catch {}
+      track(first ? "app_first_launch" : "app_open");
+    } else {
+      track("visit");
+    }
+    flushTrackingQueue();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (baseline.current === null) {
+      baseline.current = complete; // état restauré au chargement : pas compté
+      counted.current = complete;
+      return;
+    }
+    if (!complete) {
+      // Formulaire entièrement vidé (nouvelle simulation) : la prochaine comptera. Corriger
+      // un champ puis le ressaisir ne compte pas une seconde simulation.
+      if (empty) counted.current = false;
+      return;
+    }
+    if (!counted.current) {
+      counted.current = true;
+      track("simulation_complete");
+    }
+  }, [hydrated, complete, empty]);
+}
+
 /* ---------------------------------------------------------------- Partage (bas de page) */
 
 function ShareCta({ state, onCopied }: { state: SimState; onCopied: () => void }) {
-  const share = useShare(state, onCopied);
+  const share = useShare(state, onCopied, "share_bottom");
   return (
     <div className="flex justify-center pt-2">
       <button
@@ -225,7 +279,7 @@ function Header({
   onCopied: () => void;
 }) {
   const { theme, toggle } = useTheme();
-  const share = useShare(state, onCopied);
+  const share = useShare(state, onCopied, "share_header");
 
   function confirmReset() {
     if (window.confirm("Effacer la simulation en cours ?")) onReset();
