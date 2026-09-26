@@ -21,29 +21,45 @@ export function Row({
   help,
   kind = "line",
   negative,
+  stackOnMobile,
 }: {
   label: ReactNode;
   value: ReactNode;
   help?: ReactNode;
   kind?: RowKind;
   negative?: boolean;
+  /** Sous md : libellé au-dessus de la valeur (colonnes étroites). */
+  stackOnMobile?: boolean;
 }) {
   return (
     <div
       className={cn(
         "flex items-baseline justify-between gap-4 py-2",
-        kind === "line" && "border-b border-line last:border-b-0",
+        stackOnMobile && "max-md:flex-col max-md:items-start max-md:gap-0.5",
+        // Séparateur au-dessus de chaque ligne (sauf la première) : la ligne de total porte
+        // seule son trait plus marqué, sans doublon avec la dernière ligne de calcul.
+        kind === "line" && "border-t border-line first:border-t-0",
         kind !== "line" && "mt-1 border-t border-line-strong pt-3",
       )}
     >
       <div className="min-w-0">
-        <div className={cn("text-sm", kind === "line" ? "text-text-secondary" : "font-semibold text-fg")}>{label}</div>
+        <div
+          className={cn(
+            "text-sm",
+            stackOnMobile && "max-md:text-xs",
+            kind === "line" ? "text-text-secondary" : "font-semibold text-fg",
+          )}
+        >
+          {label}
+        </div>
         {help ? <div className="mt-0.5 text-xs font-light text-text-muted">{help}</div> : null}
       </div>
       <div
         className={cn(
           "tabular shrink-0 text-right",
           kind === "total" ? "text-2xl font-extrabold text-orange" : "text-sm font-semibold text-fg",
+          stackOnMobile && "max-md:text-left",
+          stackOnMobile && kind === "total" && "max-md:text-lg",
           negative && "text-negative",
         )}
       >

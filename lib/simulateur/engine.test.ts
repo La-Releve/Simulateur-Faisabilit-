@@ -180,16 +180,16 @@ describe("computeScenario", () => {
 });
 
 describe("prix de vente proposés", () => {
-  it("prix de revient +10 / +15 / +20 % (cas A : 4 687,80 €/m²)", () => {
+  it("prix de revient +10 / +20 / +30 % (cas A : 4 687,80 €/m²)", () => {
     const o = computeFaisabilite(casA);
     expect(prixVenteAutoM2(o, "pessimiste")).toBe(5_157); // 5 156,58
-    expect(prixVenteAutoM2(o, "realiste")).toBe(5_391); // 5 390,97
-    expect(prixVenteAutoM2(o, "optimiste")).toBe(5_625); // 5 625,36
+    expect(prixVenteAutoM2(o, "realiste")).toBe(5_625); // 5 625,36
+    expect(prixVenteAutoM2(o, "optimiste")).toBe(6_094); // 6 094,14
   });
 
   it("la rentabilité obtenue correspond à la marge visée, à l'arrondi près", () => {
     const o = computeFaisabilite(casA);
-    for (const [key, marge] of [["pessimiste", 0.1], ["realiste", 0.15], ["optimiste", 0.2]] as const) {
+    for (const [key, marge] of [["pessimiste", 0.1], ["realiste", 0.2], ["optimiste", 0.3]] as const) {
       const s = computeScenario(o, casA, prixVenteAutoM2(o, key));
       expect(s.rentabiliteSurCout).toBeCloseTo(marge, 3);
     }

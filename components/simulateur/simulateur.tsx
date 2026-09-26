@@ -19,8 +19,7 @@ import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
 import { Accordion } from "./accordion";
 import { AnimatedNumber } from "./animated-number";
-import { FinancementBars, FinancementSankey, LtcGauge } from "./charts";
-import { useMedia } from "./use-media";
+import { FinancementSankey, LtcGauge } from "./charts";
 import { InstallGuide } from "./install-guide";
 import { NumberField } from "./number-field";
 import { Segmented } from "./segmented";
@@ -477,17 +476,16 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
               suffix="€/m²"
               placeholder="—"
               compact
-              help={
-                isAuto ? (
-                  <span className="text-xs text-text-muted">Revient +{marge}</span>
-                ) : (
+              trailing={
+                isAuto ? null : (
                   <button
                     type="button"
                     onClick={() => update("ventes", { ...state.ventes, [key]: "" })}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-orange"
+                    aria-label={`Revenir au prix proposé (+${marge} du prix de revient)`}
+                    title={`Revenir au prix proposé (+${marge})`}
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-orange hover:bg-accent-soft"
                   >
                     <RotateCcw className="size-3" />
-                    Revient +{marge}
                   </button>
                 )
               }
@@ -548,8 +546,6 @@ function ScenarioCard({ caseKey, label, scenario }: { caseKey: ScenarioKey; labe
 /* ---------------------------------------------------------------- 04 — Le plan de financement */
 
 function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Outputs }) {
-  // Sous 640 px le Sankey devient illisible : barres empilées Ressources / Emplois.
-  const phone = useMedia("(max-width: 639px)");
   return (
     <section aria-labelledby="s04">
       <SectionTitle
@@ -559,29 +555,40 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
         subtitle="Les deux côtés s'équilibrent : c'est le tableau Ressources / Emplois que demandent les banques."
       />
       <div className="card !p-3 md:!p-6">
-        {phone ? (
-          <FinancementBars outputs={o} prixAcquisition={inputs.prixAcquisition} travaux={inputs.travaux} />
-        ) : (
-          <FinancementSankey outputs={o} prixAcquisition={inputs.prixAcquisition} travaux={inputs.travaux} />
-        )}
+        <FinancementSankey outputs={o} prixAcquisition={inputs.prixAcquisition} travaux={inputs.travaux} />
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="card">
-          <h3 className="text-2xl font-extrabold text-fg">D&apos;où vient l&apos;argent</h3>
-          <p className="label-key mt-1 mb-4">Ressources</p>
-          <Row label="Prêt bancaire acquisition" value={formatEur(o.pretAcquisition)} />
-          <Row label="Prêt bancaire travaux" value={formatEur(o.pretTravaux)} />
-          <Row label="Dette obligataire" value={formatEur(o.detteObligataire)} />
-          <Row label="Fonds propres" value={formatEur(o.fondsPropres)} />
-          <Row kind="total" label="Total ressources" value={<AnimatedNumber kind="eur" value={o.R1_total} />} />
+      {/* Deux colonnes dès 360 px : sur mobile, libellé au-dessus de la valeur pour tenir en largeur */}
+      <div className="mt-4 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-4">
+        <div className="card max-md:!p-4">
+          <h3 className="text-lg leading-tight font-extrabold text-fg md:text-2xl">D&apos;où vient l&apos;argent</h3>
+          <p className="label-key mt-1 mb-3 md:mb-4">Ressources</p>
+          <div>
+            <Row stackOnMobile label="Prêt bancaire acquisition" value={formatEur(o.pretAcquisition)} />
+            <Row stackOnMobile label="Prêt bancaire travaux" value={formatEur(o.pretTravaux)} />
+            <Row stackOnMobile label="Dette obligataire" value={formatEur(o.detteObligataire)} />
+            <Row stackOnMobile label="Fonds propres" value={formatEur(o.fondsPropres)} />
+            <Row
+              stackOnMobile
+              kind="total"
+              label="Total ressources"
+              value={<AnimatedNumber kind="eur" value={o.R1_total} />}
+            />
+          </div>
         </div>
-        <div className="card">
-          <h3 className="text-2xl font-extrabold text-fg">Où va l&apos;argent</h3>
-          <p className="label-key mt-1 mb-4">Emplois</p>
-          <Row label="Acquisition" value={formatEur(inputs.prixAcquisition)} />
-          <Row label="Travaux" value={formatEur(inputs.travaux)} />
-          <Row label="Frais d'acquisition et de financement" value={formatEur(o.E2_sousTotal)} />
-          <Row kind="total" label="Total emplois" value={<AnimatedNumber kind="eur" value={o.E1_total} />} />
+        <div className="card max-md:!p-4">
+          <h3 className="text-lg leading-tight font-extrabold text-fg md:text-2xl">Où va l&apos;argent</h3>
+          <p className="label-key mt-1 mb-3 md:mb-4">Emplois</p>
+          <div>
+            <Row stackOnMobile label="Acquisition" value={formatEur(inputs.prixAcquisition)} />
+            <Row stackOnMobile label="Travaux" value={formatEur(inputs.travaux)} />
+            <Row stackOnMobile label="Frais d'acquisition et de financement" value={formatEur(o.E2_sousTotal)} />
+            <Row
+              stackOnMobile
+              kind="total"
+              label="Total emplois"
+              value={<AnimatedNumber kind="eur" value={o.E1_total} />}
+            />
+          </div>
         </div>
       </div>
     </section>

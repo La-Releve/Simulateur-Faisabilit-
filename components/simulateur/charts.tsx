@@ -1,11 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar } from "@/components/charts/bar";
-import { BarChart } from "@/components/charts/bar-chart";
-import { BarYAxis } from "@/components/charts/bar-y-axis";
 import { Gauge } from "@/components/charts/gauge";
-import { ChartTooltip } from "@/components/charts/tooltip";
 import { SankeyChart, SankeyLink, SankeyNode, SankeyTooltip, type SankeyData } from "@/components/charts/sankey";
 import { formatEur } from "@/lib/simulateur/format";
 import type { Outputs } from "@/lib/simulateur/types";
@@ -15,19 +11,25 @@ import { useMedia, useReducedMotion } from "./use-media";
 
 interface FlowItem {
   name: string;
+  /** Libellé court pour la version mobile */
+  short: string;
   value: number;
   color: string;
 }
 
 function financementSources(o: Outputs): FlowItem[] {
   return [
-    { name: "Prêt acquisition", value: o.pretAcquisition, color: "var(--chart-4)" },
-    { name: "Prêt travaux", value: o.pretTravaux, color: "var(--chart-4)" },
-    { name: "Dette obligataire", value: o.detteObligataire, color: "var(--chart-2)" },
-    { name: "Fonds propres", value: o.fondsPropres, color: "var(--chart-1)" },
+    { name: "Prêt acquisition", short: "Prêt achat", value: o.pretAcquisition, color: "var(--chart-4)" },
+    { name: "Prêt travaux", short: "Prêt travaux", value: o.pretTravaux, color: "var(--chart-4)" },
+    { name: "Dette obligataire", short: "Obligataire", value: o.detteObligataire, color: "var(--chart-2)" },
+    { name: "Fonds propres", short: "Fonds propres", value: o.fondsPropres, color: "var(--chart-1)" },
   ].filter((f) => f.value > 0);
 }
 
+/**
+ * Même graphique en desktop et sur mobile ; sur mobile, libellés courts et plus petits,
+ * marges resserrées et proportions plus hautes pour garder des flux lisibles.
+ */
 export function FinancementSankey({ outputs, prixAcquisition, travaux }: { outputs: Outputs; prixAcquisition: number; travaux: number }) {
   const narrow = useMedia("(max-width: 767px)");
   const reduced = useReducedMotion();
@@ -35,15 +37,16 @@ export function FinancementSankey({ outputs, prixAcquisition, travaux }: { outpu
   const { data, colors } = useMemo(() => {
     const sources = financementSources(outputs);
     const usages: FlowItem[] = [
-      { name: "Acquisition", value: prixAcquisition, color: "#a1a1aa" },
-      { name: "Travaux", value: travaux, color: "#71717a" },
-      { name: "Frais", value: outputs.E2_sousTotal, color: "#52525b" },
+      { name: "Acquisition", short: "Achat", value: prixAcquisition, color: "#a1a1aa" },
+      { name: "Travaux", short: "Travaux", value: travaux, color: "#71717a" },
+      { name: "Frais", short: "Frais", value: outputs.E2_sousTotal, color: "#52525b" },
     ].filter((f) => f.value > 0);
     const centre = sources.length;
+    const label = (f: FlowItem) => (narrow ? f.short : f.name);
     const nodes: SankeyData["nodes"] = [
-      ...sources.map((s) => ({ name: s.name, category: "source" as const })),
-      { name: "Coût de l'opération", category: "landing" as const },
-      ...usages.map((u) => ({ name: u.name, category: "outcome" as const })),
+      ...sources.map((s) => ({ name: label(s), category: "source" as const })),
+      { name: narrow ? "Coût total" : "Coût de l'opération", category: "landing" as const },
+      ...usages.map((u) => ({ name: label(u), category: "outcome" as const })),
     ];
     const links: SankeyData["links"] = [
       ...sources.map((s, i) => ({ source: i, target: centre, value: s.value })),
@@ -51,124 +54,52 @@ export function FinancementSankey({ outputs, prixAcquisition, travaux }: { outpu
     ];
     const colors = [...sources.map((s) => s.color), "var(--flow-center)", ...usages.map((u) => u.color)];
     return { data: { nodes, links }, colors };
-  }, [outputs, prixAcquisition, travaux]);
+  }, [outputs, prixAcquisition, travaux, narrow]);
 
   const getColor = (_: unknown, i: number) => colors[i] ?? "var(--chart-5)";
 
   return (
-    <SankeyChart
-      data={data}
-      aspectRatio={narrow ? "1 / 1.15" : "2 / 1"}
-      margin={narrow ? { top: 12, bottom: 12, left: 40, right: 40 } : { top: 24, bottom: 24, left: 130, right: 130 }}
-      nodePadding={narrow ? 14 : 22}
-      nodeWidth={narrow ? 12 : 16}
-      animationDuration={reduced ? 0 : 900}
+    <div
+      style={
+        narrow
+          ? ({ "--sankey-name-size": "11px", "--sankey-value-size": "10px" } as React.CSSProperties)
+          : undefined
+      }
     >
-      <SankeyLink getNodeColor={getColor} strokeOpacity={0.35} />
-      <SankeyNode getNodeColor={getColor} labelOrientation={narrow ? "vertical" : "horizontal"} showValueLabels={!narrow} formatValue={formatEur} />
-      <SankeyTooltip
-        formatValue={formatEur}
-        nodeContent={({ node }) => (
-          <div className="px-3 py-2.5">
-            <div className="text-xs text-chart-tooltip-muted">{node.name}</div>
-            <div className="tabular text-sm font-semibold text-chart-tooltip-foreground">{formatEur(node.value ?? 0)}</div>
-          </div>
-        )}
-      />
-    </SankeyChart>
-  );
-}
-
-/* ---------- Mobile (< 640 px) : Ressources / Emplois en barres empilées ---------- */
-
-const FLOW_SERIES = [
-  { key: "pretAcquisition", label: "Prêt acquisition", color: "#71717a" },
-  { key: "pretTravaux", label: "Prêt travaux", color: "#52525b" },
-  { key: "detteObligataire", label: "Dette obligataire", color: "var(--chart-2)" },
-  { key: "fondsPropres", label: "Fonds propres", color: "var(--chart-1)" },
-  { key: "acquisition", label: "Acquisition", color: "var(--flow-strong)" },
-  { key: "travaux", label: "Travaux", color: "#a1a1aa" },
-  { key: "frais", label: "Frais", color: "var(--flow-weak)" },
-] as const;
-
-export function FinancementBars({ outputs: o, prixAcquisition, travaux }: { outputs: Outputs; prixAcquisition: number; travaux: number }) {
-  const reduced = useReducedMotion();
-  const data = useMemo(
-    () => [
-      {
-        name: "Ressources",
-        pretAcquisition: o.pretAcquisition,
-        pretTravaux: o.pretTravaux,
-        detteObligataire: o.detteObligataire,
-        fondsPropres: o.fondsPropres,
-        acquisition: 0,
-        travaux: 0,
-        frais: 0,
-      },
-      {
-        name: "Emplois",
-        pretAcquisition: 0,
-        pretTravaux: 0,
-        detteObligataire: 0,
-        fondsPropres: 0,
-        acquisition: prixAcquisition,
-        travaux,
-        frais: o.E2_sousTotal,
-      },
-    ],
-    [o, prixAcquisition, travaux],
-  );
-
-  return (
-    <div>
-      <BarChart
+      <SankeyChart
+        key={narrow ? "mobile" : "desktop"}
         data={data}
-        xDataKey="name"
-        orientation="horizontal"
-        stacked
-        stackGap={2}
-        aspectRatio="2 / 1"
-        barGap={0.3}
-        margin={{ top: 4, right: 8, bottom: 4, left: 84 }}
-        animationDuration={reduced ? 0 : 700}
+        aspectRatio={narrow ? "1 / 1" : "2 / 1"}
+        margin={narrow ? { top: 16, bottom: 16, left: 92, right: 60 } : { top: 24, bottom: 24, left: 130, right: 130 }}
+        nodePadding={22}
+        nodeWidth={narrow ? 10 : 16}
+        animationDuration={reduced ? 0 : 900}
       >
-        {FLOW_SERIES.map((f) => (
-          <Bar key={f.key} dataKey={f.key} fill={f.color} lineCap={3} />
-        ))}
-        <BarYAxis showAllLabels />
-        <ChartTooltip
-          showCrosshair={false}
-          showDots={false}
-          content={({ point }) => (
-            <div className="min-w-44 px-3 py-2.5">
-              <div className="mb-1.5 text-xs font-semibold text-chart-tooltip-foreground">{String(point.name)}</div>
-              {FLOW_SERIES.filter((f) => (point[f.key] as number) > 0).map((f) => (
-                <TooltipLine key={f.key} label={f.label} value={formatEur(point[f.key] as number)} />
-              ))}
+        <SankeyLink getNodeColor={getColor} strokeOpacity={0.35} />
+        <SankeyNode getNodeColor={getColor} labelOrientation="horizontal" formatValue={narrow ? formatEurShort : formatEur} />
+        <SankeyTooltip
+          formatValue={formatEur}
+          nodeContent={({ node }) => (
+            <div className="px-3 py-2.5">
+              <div className="text-xs text-chart-tooltip-muted">{node.name}</div>
+              <div className="tabular text-sm font-semibold text-chart-tooltip-foreground">{formatEur(node.value ?? 0)}</div>
             </div>
           )}
         />
-      </BarChart>
-      <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-text-secondary">
-        {FLOW_SERIES.filter((f) => data[0][f.key] + data[1][f.key] > 0).map((f) => (
-          <li key={f.key} className="flex items-center gap-2">
-            <span className="size-2.5 shrink-0 rounded-full" style={{ background: f.color }} />
-            {f.label}
-          </li>
-        ))}
-      </ul>
+      </SankeyChart>
     </div>
   );
 }
 
-function TooltipLine({ label, value, negative }: { label: string; value: string; negative?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 text-xs">
-      <span className="text-chart-tooltip-muted">{label}</span>
-      <span className={negative ? "tabular font-semibold text-negative" : "tabular font-semibold text-chart-tooltip-foreground"}>{value}</span>
-    </div>
-  );
+/** Montant abrégé pour les libellés étroits : 1,94 M€ / 337 k€ / 950 €. */
+function formatEurShort(n: number): string {
+  const nf = (v: number, d: number) =>
+    new Intl.NumberFormat("fr-FR", { maximumFractionDigits: d }).format(v).replace(/\u202f/g, "\u00a0");
+  if (n >= 1_000_000) return `${nf(n / 1_000_000, 2)}\u00a0M€`;
+  if (n >= 10_000) return `${nf(Math.floor(n / 1000), 0)}\u00a0k€`;
+  return formatEur(n);
 }
+
 
 /* ---------- Jauge linéaire : Loan to Cost ---------- */
 

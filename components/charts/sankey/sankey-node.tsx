@@ -284,7 +284,7 @@ function AnimatedNode({
       {showLabels ? (
         <>
           <NodeLabel
-            className="fill-foreground font-medium text-[13px]"
+            className="fill-foreground font-medium text-[length:var(--sankey-name-size,13px)]"
             key={`name-${index}-${revealEpoch}`}
             layout={labelLayouts.name}
             opacity={nameOpacity}
@@ -294,7 +294,7 @@ function AnimatedNode({
           </NodeLabel>
           {labelLayouts.value ? (
             <NodeLabel
-              className="fill-foreground text-[11px]"
+              className="fill-foreground text-[length:var(--sankey-value-size,11px)]"
               key={`value-${index}-${revealEpoch}`}
               layout={labelLayouts.value}
               opacity={valueOpacity}

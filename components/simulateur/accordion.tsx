@@ -1,19 +1,32 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 /** Accordéon (transitions.dev « Accordion expand ») : grid-rows, contenu en fondu flou, chevron qui bascule. */
 export function Accordion({ title, total, children }: { title: string; total: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const id = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    if (next) {
+      // Amène le détail à l'écran : l'en-tête se place en haut, le contenu se déplie dessous.
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      requestAnimationFrame(() =>
+        rootRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }),
+      );
+    }
+  }
   return (
-    <div className="t-acc rounded-2xl border border-line bg-surface" data-open={open}>
+    <div ref={rootRef} className="t-acc scroll-mt-4 rounded-2xl border border-line bg-surface" data-open={open}>
       <button
         type="button"
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         className="flex w-full items-center gap-3 px-5 py-4 text-left md:px-6"
       >
         <span className="flex-1 text-base font-semibold text-fg">{title}</span>

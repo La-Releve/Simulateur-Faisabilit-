@@ -48,8 +48,8 @@ export const PARAMS: Params = {
  */
 export const MARGES_SCENARIOS = {
   pessimiste: 0.1,
-  realiste: 0.15,
-  optimiste: 0.2,
+  realiste: 0.2,
+  optimiste: 0.3,
 } as const;
 
 /** Durées d'opération proposées, en mois. */
