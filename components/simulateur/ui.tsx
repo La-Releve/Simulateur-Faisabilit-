@@ -7,7 +7,9 @@ export function SectionTitle({ index, eyebrow, title, subtitle }: { index: strin
       <span className="eyebrow">
         {index} — {eyebrow}
       </span>
-      <h2 className="text-2xl leading-tight font-extrabold text-fg md:text-[30px]">{title}</h2>
+      <h2 id={`s${index}`} className="text-2xl leading-tight font-extrabold text-fg md:text-[30px]">
+        {title}
+      </h2>
       {subtitle ? <p className="text-sm font-light text-text-secondary md:text-base">{subtitle}</p> : null}
     </div>
   );

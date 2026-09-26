@@ -85,7 +85,7 @@ export function Segmented<T extends string | number>({
           onClick={() => onChange(o.value)}
           className={cn(
             "t-tab flex-1 font-semibold whitespace-nowrap",
-            size === "xs" ? "h-[26px] min-w-6 px-1.5 text-xs" : "h-9 px-1.5 text-[13px]",
+            size === "xs" ? "h-7 min-w-8 px-2.5 text-xs" : "h-9 px-1.5 text-[13px]",
           )}
         >
           {o.label}

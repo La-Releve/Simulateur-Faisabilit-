@@ -103,8 +103,7 @@ export function Simulateur() {
             Simulateur de <span className="text-orange">faisabilité</span>
           </h1>
           <p className="t-stagger-line t-stagger-line--2 mt-4 max-w-2xl text-sm font-light text-text-secondary md:text-base">
-            Combien coûte l&apos;opération, combien apporter, à quel prix revendre. Tes chiffres restent sur ton
-            appareil : rien n&apos;est envoyé sur internet.
+            Combien coûte l&apos;opération, combien apporter, à quel prix revendre.
           </p>
         </div>
 
@@ -142,8 +141,8 @@ export function Simulateur() {
                 </button>
               ) : null}
             </div>
-            {result ? <FinancementSection inputs={result.inputs} outputs={result.outputs} /> : null}
             {result ? <DetailSection inputs={result.inputs} outputs={result.outputs} /> : null}
+            {result ? <FinancementSection inputs={result.inputs} outputs={result.outputs} /> : null}
           </div>
         </div>
       </main>
@@ -313,7 +312,8 @@ function InputsSection({
             help={surfaceZero ? <span className="text-negative">Doit être supérieure à 0</span> : undefined}
           />
         </div>
-        <div className="grid grid-cols-1 items-start gap-3 min-[360px]:grid-cols-2">
+        {/* Frais d'agence un peu plus larges : la case contient aussi la bascule % / € */}
+        <div className="grid grid-cols-1 items-start gap-3 min-[360px]:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <NumberField
             id="travaux"
             label="Travaux TTC"
@@ -543,13 +543,13 @@ function ScenarioCard({ caseKey, label, scenario }: { caseKey: ScenarioKey; labe
   );
 }
 
-/* ---------------------------------------------------------------- 04 — Le plan de financement */
+/* ---------------------------------------------------------------- 05 — Le plan de financement */
 
 function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Outputs }) {
   return (
-    <section aria-labelledby="s04">
+    <section aria-labelledby="s05">
       <SectionTitle
-        index="04"
+        index="05"
         eyebrow="Le plan de financement"
         title="D'où vient l'argent, où il va"
         subtitle="Les deux côtés s'équilibrent : c'est le tableau Ressources / Emplois que demandent les banques."
@@ -595,15 +595,15 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
   );
 }
 
-/* ---------------------------------------------------------------- 05 — Détail du chiffrage */
+/* ---------------------------------------------------------------- 04 — Détail du chiffrage */
 
 function DetailSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Outputs }) {
   const d = inputs.duree;
   const agenceHelp =
     inputs.modeAgence === "pct" ? `${formatRate(inputs.valeurAgence)} du prix d'acquisition` : "Montant saisi";
   return (
-    <section aria-labelledby="s05">
-      <SectionTitle index="05" eyebrow="Détail du chiffrage" title="Ligne par ligne" />
+    <section aria-labelledby="s04">
+      <SectionTitle index="04" eyebrow="Détail du chiffrage" title="Ligne par ligne" />
       <div className="flex flex-col gap-3">
         <Accordion title="Frais d'acquisition et de financement" total={<AnimatedNumber kind="eur" value={o.E2_sousTotal} />}>
           <Row label="Frais d'agence" help={agenceHelp} value={formatEur(o.fraisAgence)} />
