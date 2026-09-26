@@ -34,8 +34,8 @@ function PlusAppIcon({ className }: { className?: string }) {
 
 const STEPS = [
   { text: "Clique sur Partager", icon: <ShareIcon className="h-[18px] w-auto" /> },
-  { text: "Clique sur « Sur l'écran d'accueil »", icon: <PlusAppIcon className="size-[17px]" /> },
-  { text: "« Ajouter »", icon: null },
+  { text: 'Clique sur "Sur l\'écran d\'accueil"', icon: <PlusAppIcon className="size-[17px]" /> },
+  { text: '"Ajouter"', icon: null },
 ];
 
 /** Modale (bottom sheet sur mobile) expliquant l'installation de la PWA. */
@@ -139,11 +139,14 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
               ? "Installe le simulateur sur ton iPhone"
               : "Installe le simulateur"}
         </h2>
+        {!inApp ? (
+          <p className="mt-2 text-sm font-light text-text-secondary">Accède au simulateur en 1 clic, même hors connexion</p>
+        ) : null}
 
         {inApp ? (
           <p className="mt-3 text-sm font-light text-text-secondary">
             Ce navigateur intégré ne permet pas l&apos;ajout à l&apos;écran d&apos;accueil. Touche le menu (••• ou ⋯) puis
-            « Ouvrir dans le navigateur »{platform === "ios-inapp" ? " / « Ouvrir dans Safari »" : ""}.
+            &quot;Ouvrir dans le navigateur&quot;{platform === "ios-inapp" ? ' / "Ouvrir dans Safari"' : ""}.
           </p>
         ) : ios ? (
           <ol className="mt-4 flex flex-col gap-2">
@@ -161,7 +164,7 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
           <p className="mt-3 text-sm font-light text-text-secondary">
             {canPromptInstall
               ? "Ajoute le simulateur à ton écran d'accueil : il s'ouvre comme une app et fonctionne hors ligne."
-              : "Utilise le menu de ton navigateur puis « Installer l'application » ou « Ajouter à l'écran d'accueil »."}
+              : 'Utilise le menu de ton navigateur puis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil".'}
           </p>
         )}
 
