@@ -11,11 +11,20 @@ const openSans = Open_Sans({
 });
 
 // URL publique du site : nécessaire pour que l'image Open Graph soit référencée en absolu
-// (aperçus de lien dans Messages, WhatsApp, LinkedIn…). À définir au déploiement.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://simulateur.lareleve.io";
+// (aperçus de lien dans Messages, WhatsApp, LinkedIn…). Évaluée au build.
+// Ordre : NEXT_PUBLIC_SITE_URL si défini, sinon le domaine de production fourni par
+// l'hébergeur (VERCEL_PROJECT_PRODUCTION_URL sur Vercel), sinon localhost.
+function siteUrl(): URL {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+    "http://localhost:3000";
+  // Tolère une valeur saisie sans protocole (« simulateur-lareleve.vercel.app »)
+  return new URL(/^https?:\/\//.test(raw) ? raw : `https://${raw}`);
+}
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: siteUrl(),
   title: "Simulateur de Faisabilité — La Relève",
   description:
     "Simulez le plan de financement et la rentabilité d'une opération de marchand de biens. Calcul 100 % local, aucune donnée ne quitte votre appareil.",

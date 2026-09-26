@@ -36,7 +36,7 @@ assets/                 sources non servies (favicon, avatars, icônes iOS) ; ve
 - Aucun chiffre ne quitte l'appareil : pas d'API, pas de base de données, pas d'analytics.
 - La simulation en cours est sauvegardée dans `localStorage` (clé `simulateur:v1`).
 - Le bouton Partager ouvre la feuille de partage native avec un message pré-rédigé et un lien court du type `/#9n80.64.rv34` : les valeurs saisies sont encodées dans l'URL (base 36, valeurs par défaut omises, sans base de données) et placées dans le fragment `#`, que le navigateur n'envoie jamais au serveur. À l'ouverture, la simulation est chargée puis le fragment est retiré de l'URL.
-- Image Open Graph : `app/opengraph-image.png`. Définir `NEXT_PUBLIC_SITE_URL` (voir `.env.example`) pour que les aperçus de lien pointent vers le bon domaine.
+- Image Open Graph : `app/opengraph-image.png`. Son adresse absolue utilise `NEXT_PUBLIC_SITE_URL` (voir `.env.example`), ou à défaut le domaine de production fourni par Vercel ; la valeur étant intégrée au build, tout changement demande un redéploiement.
 - Open Sans est auto-hébergée au build (`next/font`), aucune requête vers Google au runtime.
 
 ## Modifications apportées aux composants Bklit
