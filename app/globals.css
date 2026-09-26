@@ -73,6 +73,26 @@
   --border: rgba(255, 255, 255, 0.1); /* piste des jauges */
 
   color-scheme: dark;
+
+  /* ── Motion tokens (transitions.dev) ─────────────────────────── */
+  --duration-stagger: 40ms;
+  --duration-micro: 80ms;
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-medium: 350ms;
+  --duration-slow: 400ms;
+  --duration-very-slow: 500ms;
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: ease-in-out;
+  --ease-out: ease-out;
+  --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --distance-micro: 4px;
+  --distance-base: 8px;
+  --distance-medium: 12px;
+  --scale-large: 0.96;
+  --scale-medium: 0.97;
+  --blur-small: 2px;
+  --blur-medium: 3px;
 }
 
 @theme inline {
@@ -204,22 +224,175 @@
   }
 }
 
-/* Guide d'installation : bottom sheet sur mobile */
-.install-sheet[open] {
-  animation: sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* ================================================================
+   Transitions (d'après transitions.dev, adaptées à la charte)
+   ================================================================ */
+
+/* Tabs sliding — pastille active qui glisse entre les options */
+.t-tabs-pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 0;
+  border-radius: 9999px;
+  background: var(--color-burnt-orange);
+  transform: translateX(0);
+  transition:
+    transform var(--duration-fast) var(--ease-smooth-out),
+    width var(--duration-fast) var(--ease-smooth-out);
+  will-change: transform, width;
+  pointer-events: none;
+  z-index: 0;
+}
+.t-tab {
+  position: relative;
+  z-index: 1;
+  transition: color var(--duration-fast) var(--ease-smooth-out);
+}
+
+/* Texts reveal — montée floutée décalée (titre + sous-titre) */
+@keyframes t-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-medium));
+    filter: blur(var(--blur-medium));
+  }
+}
+.t-stagger-line {
+  display: block;
+  animation: t-stagger-in var(--duration-very-slow) var(--ease-smooth-out) both;
+}
+.t-stagger-line--2 {
+  animation-delay: var(--duration-stagger);
+}
+.t-stagger-line--3 {
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+
+/* Modal open / close — scale depuis le centre ; bottom sheet qui monte sur mobile */
+.t-modal-backdrop::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-smooth-out);
+}
+.t-modal-backdrop[data-state="open"]::backdrop {
+  opacity: 1;
+}
+.t-modal-backdrop[data-state="closing"]::backdrop {
+  opacity: 0;
+  transition-duration: var(--duration-quick);
+}
+.t-modal {
+  opacity: 0;
+  transform: scale(var(--scale-large));
+  transform-origin: center;
+  transition:
+    transform var(--duration-fast) var(--ease-smooth-out),
+    opacity var(--duration-fast) var(--ease-smooth-out);
+  will-change: transform, opacity;
+}
+[data-state="open"] > .t-modal {
+  opacity: 1;
+  transform: none;
+}
+[data-state="closing"] > .t-modal {
+  opacity: 0;
+  transform: scale(var(--scale-large));
+  transition-duration: var(--duration-quick);
 }
 @media (max-width: 767px) {
-  .install-sheet {
-    max-height: 100dvh;
+  .t-modal {
+    transform: translateY(40px);
+    transition-duration: var(--duration-slow);
+  }
+  [data-state="closing"] > .t-modal {
+    transform: translateY(40px);
+    transition-duration: var(--duration-medium);
   }
 }
-@keyframes sheet-in {
-  from {
-    transform: translateY(24px);
-    opacity: 0;
+
+/* Toast open / close — monte du bas avec fondu + flou, ouverture plus lente que fermeture */
+.t-toast {
+  opacity: 0;
+  transform: translateY(16px) scale(var(--scale-medium));
+  filter: blur(var(--blur-small));
+  will-change: transform, opacity, filter;
+  transition:
+    opacity var(--duration-fast) var(--ease-smooth-out),
+    transform var(--duration-fast) var(--ease-smooth-out),
+    filter var(--duration-fast) var(--ease-smooth-out);
+}
+.t-toast.is-open {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+  transition-duration: var(--duration-medium);
+}
+
+/* Icon swap — fondu croisé flou + scale dans le même emplacement */
+.t-icon-swap {
+  display: inline-grid;
+}
+.t-icon-swap > .t-icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--duration-fast) var(--ease-in-out),
+    filter var(--duration-fast) var(--ease-in-out),
+    transform var(--duration-fast) var(--ease-in-out);
+}
+.t-icon-swap[data-state="a"] > [data-icon="b"],
+.t-icon-swap[data-state="b"] > [data-icon="a"] {
+  opacity: 0;
+  filter: blur(var(--blur-small));
+  transform: scale(0.25);
+}
+
+/* Accordion expand — grid-rows + fondu flou du contenu + chevron qui bascule */
+.t-acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-fast) var(--ease-smooth-out);
+}
+.t-acc[data-open="true"] .t-acc-panel {
+  grid-template-rows: 1fr;
+}
+.t-acc-panel-inner {
+  overflow: hidden;
+  opacity: 0;
+  filter: blur(var(--blur-small));
+  transition:
+    opacity var(--duration-fast) var(--ease-smooth-out),
+    filter var(--duration-fast) var(--ease-smooth-out);
+}
+.t-acc[data-open="true"] .t-acc-panel-inner {
+  opacity: 1;
+  filter: blur(0);
+}
+.t-acc-chevron {
+  transition: transform var(--duration-fast) var(--ease-smooth-out);
+}
+.t-acc-chevron path {
+  vector-effect: non-scaling-stroke;
+}
+.t-acc[data-open="true"] .t-acc-chevron {
+  transform: scaleY(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tabs-pill,
+  .t-tab,
+  .t-modal,
+  .t-modal-backdrop::backdrop,
+  .t-toast,
+  .t-icon-swap > .t-icon,
+  .t-acc-panel,
+  .t-acc-panel-inner,
+  .t-acc-chevron {
+    transition: none !important;
   }
-  to {
-    transform: none;
-    opacity: 1;
+  .t-stagger-line {
+    animation: none !important;
   }
 }

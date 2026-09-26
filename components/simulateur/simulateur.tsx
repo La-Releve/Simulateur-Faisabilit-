@@ -2,14 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Download, RotateCcw, Share2 } from "lucide-react";
+import { Check, Download, RotateCcw, Share2 } from "lucide-react";
 import { computeFaisabilite } from "@/lib/simulateur/engine";
 import {
   formatEur,
   formatEurM2,
-  formatEurM2Signed,
-  formatEurSigned,
-  formatPct1,
   formatPctInt,
   formatRate,
   parseInput,
@@ -20,11 +17,13 @@ import { encodeShareHash, toInputs, type SimState } from "@/lib/simulateur/state
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
 import { Accordion } from "./accordion";
+import { AnimatedNumber } from "./animated-number";
 import { FinancementBars, FinancementSankey, LtcGauge, MargeBarChart } from "./charts";
 import { useMedia } from "./use-media";
 import { InstallGuide } from "./install-guide";
 import { NumberField } from "./number-field";
 import { Segmented } from "./segmented";
+import { Toast, useToast } from "./toast";
 import { Row, SectionTitle } from "./ui";
 import { useInstall } from "./use-install";
 import { useSimulation } from "./use-simulation";
@@ -34,6 +33,7 @@ const P = PARAMS;
 export function Simulateur() {
   const { state, update, reset } = useSimulation();
   const install = useInstall();
+  const toast = useToast();
 
   const validation = useMemo(() => toInputs(state), [state]);
   const result = useMemo(
@@ -44,7 +44,11 @@ export function Simulateur() {
   return (
     <div className="min-h-dvh pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       <Header
-        onReset={reset}
+        onReset={() => {
+          reset();
+          toast.show("Nouvelle simulation");
+        }}
+        onCopied={() => toast.show("Lien copié")}
         state={state}
         showInstall={install.ready && !install.standalone}
         onInstall={() => (install.canPromptInstall && install.platform === "android" ? install.promptInstall() : install.openGuide())}
@@ -52,10 +56,10 @@ export function Simulateur() {
 
       <main className="mx-auto w-full max-w-[1200px] px-4 pb-16 sm:px-6">
         <div className="pt-6 pb-8 md:pt-10 md:pb-12">
-          <h1 className="text-[32px] leading-none font-extrabold tracking-[-0.025em] text-white md:text-5xl">
+          <h1 className="t-stagger-line text-[32px] leading-none font-extrabold tracking-[-0.025em] text-white md:text-5xl">
             Simulateur de <span className="text-orange">faisabilité</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-sm font-light text-text-secondary md:text-base">
+          <p className="t-stagger-line t-stagger-line--2 mt-4 max-w-2xl text-sm font-light text-text-secondary md:text-base">
             Combien coûte l&apos;opération, combien apporter, à quel prix revendre. Tes chiffres restent sur ton
             appareil : rien n&apos;est envoyé sur internet.
           </p>
@@ -75,6 +79,7 @@ export function Simulateur() {
         </div>
       </main>
 
+      <Toast message={toast.message} open={toast.open} />
       <InstallGuide
         open={install.open}
         platform={install.platform}
@@ -90,11 +95,13 @@ export function Simulateur() {
 
 function Header({
   onReset,
+  onCopied,
   state,
   showInstall,
   onInstall,
 }: {
   onReset: () => void;
+  onCopied: () => void;
   state: SimState;
   showInstall: boolean;
   onInstall: () => void;
@@ -111,6 +118,7 @@ function Header({
       }
       await navigator.clipboard.writeText(url);
       setShared(true);
+      onCopied();
       setTimeout(() => setShared(false), 2000);
     } catch {
       // partage annulé
@@ -136,7 +144,10 @@ function Header({
         </button>
       ) : null}
       <IconButton label={shared ? "Lien copié" : "Partager cette simulation"} onClick={share}>
-        <Share2 className="size-4" />
+        <span className="t-icon-swap" data-state={shared ? "b" : "a"}>
+          <Share2 className="t-icon size-4" data-icon="a" />
+          <Check className="t-icon size-4 text-orange" data-icon="b" />
+        </span>
       </IconButton>
       <IconButton label="Nouvelle simulation" onClick={confirmReset}>
         <RotateCcw className="size-4" />
@@ -291,12 +302,12 @@ function KpiSection({ result, validation }: { result: Result; validation: Valida
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <Kpi
           label="Coût total de l'opération"
-          value={o ? formatEur(o.totalReelInclDetteObligataire) : "—"}
+          value={o ? <AnimatedNumber kind="eur" value={o.totalReelInclDetteObligataire} /> : "—"}
           sub={o ? `dont ${formatEur(o.E2_sousTotal + o.E3_sousTotal)} de frais` : undefined}
         />
         <Kpi
           label="Apport nécessaire"
-          value={o ? formatEur(o.apportTotal) : "—"}
+          value={o ? <AnimatedNumber kind="eur" value={o.apportTotal} /> : "—"}
           sub={
             o ? (
               <>
@@ -307,12 +318,12 @@ function KpiSection({ result, validation }: { result: Result; validation: Valida
         />
         <Kpi
           label="Prix de revient au m²"
-          value={o ? formatEurM2(o.prixRevientM2) : "—"}
+          value={o ? <AnimatedNumber kind="eurM2" value={o.prixRevientM2} /> : "—"}
           sub={o ? "Seuil de rentabilité à la revente" : undefined}
         />
         <Kpi
           label="Loan to Cost"
-          value={o ? formatPctInt(o.loanToCost) : "—"}
+          value={o ? <AnimatedNumber kind="pctInt" value={o.loanToCost} /> : "—"}
           sub={o ? <LtcGauge value={o.loanToCost} /> : undefined}
         />
       </div>
@@ -320,7 +331,7 @@ function KpiSection({ result, validation }: { result: Result; validation: Valida
   );
 }
 
-function Kpi({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
+function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5 rounded-2xl border border-line bg-surface p-4 md:p-5">
       <div className="tabular text-[22px] leading-tight font-extrabold text-orange sm:text-[28px] md:text-[30px]">{value}</div>
@@ -354,7 +365,7 @@ function ScenariosSection({ state, update, result }: { state: SimState; update: 
           result ? (
             <>
               Seuil de rentabilité :{" "}
-              <span className="font-semibold text-orange">{formatEurM2(result.outputs.prixRevientM2)}</span>
+              <AnimatedNumber kind="eurM2" value={result.outputs.prixRevientM2} className="font-semibold text-orange" />
             </>
           ) : (
             "Saisis un prix de vente au m² pour chaque scénario."
@@ -403,19 +414,19 @@ function ScenarioCard({ label, scenario, ready }: { label: string; scenario: Sce
       {scenario ? (
         <>
           <div className={cn("tabular text-[28px] leading-tight font-extrabold", negative ? "text-negative" : "text-orange")}>
-            {formatEurSigned(scenario.margeBrute)}
+            <AnimatedNumber kind="eurSigned" value={scenario.margeBrute} />
           </div>
           <div className="label-key mt-1">Marge brute avant impôts</div>
           <div className="mt-4">
-            <Row label="Prix de vente total" value={formatEur(scenario.prixVenteTotal)} />
+            <Row label="Prix de vente total" value={<AnimatedNumber kind="eur" value={scenario.prixVenteTotal} />} />
             <Row
               label="Marge brute au m²"
-              value={formatEurM2Signed(scenario.margeBruteM2)}
+              value={<AnimatedNumber kind="eurM2Signed" value={scenario.margeBruteM2} />}
               negative={negative}
             />
             <Row
               label="Rentabilité (marge / prix de revient)"
-              value={formatPct1(scenario.rentabiliteSurCout)}
+              value={<AnimatedNumber kind="pct1" value={scenario.rentabiliteSurCout} />}
               negative={negative}
             />
           </div>
@@ -457,7 +468,7 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
           <Row label="Prêt bancaire travaux" value={formatEur(o.pretTravaux)} />
           <Row label="Dette obligataire" value={formatEur(o.detteObligataire)} />
           <Row label="Fonds propres" value={formatEur(o.fondsPropres)} />
-          <Row kind="total" label="Total ressources" value={formatEur(o.R1_total)} />
+          <Row kind="total" label="Total ressources" value={<AnimatedNumber kind="eur" value={o.R1_total} />} />
         </div>
         <div className="card">
           <h3 className="text-2xl font-extrabold text-white">Où va l&apos;argent</h3>
@@ -465,7 +476,7 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
           <Row label="Acquisition" value={formatEur(inputs.prixAcquisition)} />
           <Row label="Travaux" value={formatEur(inputs.travaux)} />
           <Row label="Frais d'acquisition et de financement" value={formatEur(o.E2_sousTotal)} />
-          <Row kind="total" label="Total emplois" value={formatEur(o.E1_total)} />
+          <Row kind="total" label="Total emplois" value={<AnimatedNumber kind="eur" value={o.E1_total} />} />
         </div>
       </div>
     </section>
@@ -482,7 +493,7 @@ function DetailSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Output
     <section aria-labelledby="s05">
       <SectionTitle index="05" eyebrow="Détail du chiffrage" title="Ligne par ligne" />
       <div className="flex flex-col gap-3">
-        <Accordion title="Frais d'acquisition et de financement" total={formatEur(o.E2_sousTotal)}>
+        <Accordion title="Frais d'acquisition et de financement" total={<AnimatedNumber kind="eur" value={o.E2_sousTotal} />}>
           <Row label="Frais d'agence" help={agenceHelp} value={formatEur(o.fraisAgence)} />
           <Row
             label={`Frais de notaire (${formatRate(P.tauxNotaire)})`}
@@ -517,7 +528,7 @@ function DetailSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Output
           <Row kind="subtotal" label="Total" value={formatEur(o.E2_sousTotal)} />
         </Accordion>
 
-        <Accordion title="Coût de la dette obligataire" total={formatEur(o.E3_sousTotal)}>
+        <Accordion title="Coût de la dette obligataire" total={<AnimatedNumber kind="eur" value={o.E3_sousTotal} />}>
           <Row
             label={`Intérêts obligataires (${d} mois · ${formatRate(P.tauxObligataireAnnuel)}/an)`}
             help={`${formatRate(P.tauxObligataireAnnuel)} par an de la dette obligataire (${formatRate(P.partDetteObligataire)} de l'apport), sur ${d} mois`}
@@ -531,7 +542,7 @@ function DetailSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Output
           <Row kind="subtotal" label="Total" value={formatEur(o.E3_sousTotal)} />
         </Accordion>
 
-        <Accordion title="Financement bancaire" total={formatEur(o.R1)}>
+        <Accordion title="Financement bancaire" total={<AnimatedNumber kind="eur" value={o.R1} />}>
           <Row
             label={`Prêt acquisition (${formatRate(P.quotiteAcquisition)} du prix)`}
             help={`${formatRate(P.quotiteAcquisition)} du prix d'acquisition`}

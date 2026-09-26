@@ -2,13 +2,13 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 
+/** Accordéon (transitions.dev « Accordion expand ») : grid-rows, contenu en fondu flou, chevron qui bascule. */
 export function Accordion({ title, total, children }: { title: string; total: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
-    <div className="rounded-2xl border border-line bg-surface">
+    <div className="t-acc rounded-2xl border border-line bg-surface" data-open={open}>
       <button
         type="button"
         aria-expanded={open}
@@ -18,13 +18,10 @@ export function Accordion({ title, total, children }: { title: string; total: Re
       >
         <span className="flex-1 text-base font-semibold text-white">{title}</span>
         <span className="tabular text-base font-extrabold text-orange">{total}</span>
-        <ChevronDown className={cn("size-5 shrink-0 text-text-muted transition-transform duration-200", open && "rotate-180")} />
+        <ChevronDown className="t-acc-chevron size-5 shrink-0 text-text-muted" />
       </button>
-      <div
-        id={id}
-        className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
-      >
-        <div className="overflow-hidden" inert={!open}>
+      <div id={id} className="t-acc-panel">
+        <div className="t-acc-panel-inner" inert={!open}>
           <div className="px-5 pb-4 md:px-6">{children}</div>
         </div>
       </div>

@@ -43,3 +43,7 @@ Les composants sont copiés dans le projet par le registre shadcn et ont été a
 
 - `bar.tsx` / `bar-chart.tsx` : prise en charge des valeurs négatives (domaine sous zéro, barres depuis la ligne 0), couleur par barre (`getFill`) pour afficher une marge négative en rouge, correction de la largeur des barres horizontales empilées.
 - `sankey-node.tsx` : prop `formatValue` (le libellé par défaut affichait « sessions »).
+
+## Animations
+
+Les transitions suivent l'échelle de tokens de mouvement de [transitions.dev](https://transitions.dev) (déclarée dans `app/globals.css` : `--duration-*`, `--ease-smooth-out`…) : pastille glissante des segmented controls, apparition du titre, modale du guide d'installation, toast, bascule d'icône du bouton Partager, accordéons. Les montants clés roulent vers leur nouvelle valeur avec [NumberFlow](https://number-flow.barvian.me) (MIT), avec un texte équivalent pour les lecteurs d'écran. Tout est désactivé avec `prefers-reduced-motion`.
