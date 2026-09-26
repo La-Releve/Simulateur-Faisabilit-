@@ -125,6 +125,60 @@ describe("computeFaisabilite — cas C (Excel d'origine)", () => {
   });
 });
 
+describe("fichier Excel d'origine (Simiulateur_de_faisabilite (1).xlsx, valeurs calculées par Excel)", () => {
+  // Feuil1 : D7 = 1 000 000, D2 = 100 m², D8 = 2 000 €/m² × 100, frais d'agence 5 %, 12 mois
+  const excel: Inputs = {
+    prixAcquisition: 1_000_000,
+    surface: 100,
+    travaux: 200_000,
+    duree: 12,
+    modeAgence: "pct",
+    valeurAgence: 0.05,
+  };
+  const o = computeFaisabilite(excel);
+
+  it("emplois, ressources, bonds (cellules D3 à F20)", () => {
+    expectValues(o, {
+      prixM2Acquisition: 10_000, // D3
+      pretAcquisition: 750_000, // F7
+      pretTravaux: 200_000, // F8
+      R1: 950_000, // F9
+      E1_sousTotal: 1_200_000, // D9
+      fraisAgence: 50_000, // D10
+      fraisGarantie: 14_250, // D11
+      fraisNotaire: 25_000, // D12
+      fraisCourtage: 14_250, // D13
+      interetsBanque: 52_250, // D14
+      fraisDossierBanque: 4_750, // D15
+      commissionEngagement: 4_750, // D16
+      E2_sousTotal: 165_250, // D17
+      E1_total: 1_365_250, // D18
+      apportTotal: 415_250, // F10
+      R1_total: 1_365_250, // F18
+      fondsPropres: 83_050, // F19
+      detteObligataire: 332_200, // F20
+      fraisDetteObligataire: 33_220, // D19
+      fraisStructurationObligataire: 16_610, // D20
+      E3_sousTotal: 49_830, // D21
+      totalReelInclDetteObligataire: 1_415_080, // D22
+      prixRevientM2: 14_150.8, // D27
+    });
+    expect((o.R1 / o.E1_total) * 100).toBeCloseTo(69.58432521516206, 9); // D24
+  });
+
+  it.each([
+    ["Best case", 20_000, 5_849.2, 2_000_000, 584_920, 0.41334765525623995], // D28:D34
+    ["Middle case", 17_500, 3_349.2, 1_750_000, 334_920, 0.23667919834920995], // D38:D44
+    ["Worst case", 16_000, 1_849.2, 1_600_000, 184_920, 0.13067812420499195], // D48:D54
+  ])("%s", (_, prixM2, margeM2, total, marge, tri) => {
+    const s = computeScenario(o, excel, prixM2);
+    expect(s.margeBruteM2).toBeCloseTo(margeM2, 6);
+    expect(s.prixVenteTotal).toBeCloseTo(total, 6);
+    expect(s.margeBrute).toBeCloseTo(marge, 6);
+    expect(s.rentabiliteSurCout).toBeCloseTo(tri, 12);
+  });
+});
+
 describe("invariants", () => {
   it.each([casA, casB, { ...casA, duree: 6 }, { ...casB, travaux: 0, valeurAgence: 0 }])(
     "R1_total === E1_total",
