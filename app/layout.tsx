@@ -41,8 +41,12 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
+  // URL canonique (og:url) : utilisée par Facebook / LinkedIn pour identifier la page, quel que
+  // soit le code de simulation placé après le # dans le lien partagé.
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
+    url: "/",
     locale: "fr_FR",
     siteName: "La Relève",
     title: "Simulateur de Faisabilité ⎜ La Relève",
