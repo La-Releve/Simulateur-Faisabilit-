@@ -16,7 +16,6 @@ export interface SimState {
 }
 
 export const STORAGE_KEY = "simulateur:v1";
-export const SHARE_PREFIX = "#s=";
 
 export const DEFAULT_STATE: SimState = {
   v: 1,
@@ -31,7 +30,7 @@ export const DEFAULT_STATE: SimState = {
 
 const str = (x: unknown, fallback: string) => (typeof x === "string" ? x.slice(0, 32) : fallback);
 
-/** Valide un objet inconnu (localStorage, lien partagé) et le ramène à un SimState sûr. */
+/** Valide un objet inconnu (localStorage) et le ramène à un SimState sûr. */
 export function sanitizeState(raw: unknown): SimState | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -84,30 +83,4 @@ export function toInputs(s: SimState): Validation {
       valeurAgence: s.modeAgence === "pct" ? agence / 100 : agence,
     },
   };
-}
-
-function toBase64Url(text: string): string {
-  const bytes = new TextEncoder().encode(text);
-  let bin = "";
-  bytes.forEach((b) => (bin += String.fromCharCode(b)));
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function fromBase64Url(b64: string): string {
-  const bin = atob(b64.replace(/-/g, "+").replace(/_/g, "/"));
-  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
-}
-
-/** Encode l'état dans un fragment d'URL (jamais transmis au serveur). */
-export function encodeShareHash(s: SimState): string {
-  return SHARE_PREFIX + toBase64Url(JSON.stringify(s));
-}
-
-export function decodeShareHash(hash: string): SimState | null {
-  if (!hash.startsWith(SHARE_PREFIX)) return null;
-  try {
-    return sanitizeState(JSON.parse(fromBase64Url(hash.slice(SHARE_PREFIX.length))));
-  } catch {
-    return null;
-  }
 }

@@ -70,7 +70,7 @@ export function Segmented<T extends string | number>({
             className={cn(
               "t-tab flex-1 rounded-full font-semibold whitespace-nowrap",
               size === "sm" ? "px-3 py-1 text-xs" : "px-1.5 py-2 text-[13px]",
-              active ? "text-white" : "text-text-secondary hover:text-white",
+              active ? "text-white" : "text-text-secondary hover:text-fg",
             )}
           >
             {o.label}

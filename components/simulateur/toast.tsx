@@ -33,7 +33,7 @@ export function Toast({ message, open }: { message: string | null; open: boolean
     >
       {message ? (
         <div
-          className={`t-toast flex items-center gap-2 rounded-full border border-line-strong bg-dark-gray/95 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur ${open ? "is-open" : ""}`}
+          className={`t-toast flex items-center gap-2 rounded-full border border-line-strong bg-elevated/95 px-4 py-2.5 text-sm font-semibold text-fg shadow-lg backdrop-blur ${open ? "is-open" : ""}`}
         >
           <span className="flex size-5 items-center justify-center rounded-full bg-orange">
             <Check className="size-3 text-white" strokeWidth={3} />

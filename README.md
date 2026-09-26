@@ -22,7 +22,7 @@ lib/simulateur/
   engine.ts        computeFaisabilite(inputs, params) → outputs (fonction pure)
   scenarios.ts     computeScenario(outputs, inputs, prixM2) (formules de l'Excel d'origine)
   format.ts        formatage €, %, m² et saisie
-  state.ts         état de saisie, validation, lien de partage (fragment)
+  state.ts         état de saisie, validation
   *.test.ts        cas A, B, C (parité Notion / Excel) et invariants
 components/simulateur/  UI (sections 01 à 05, guide d'installation, graphiques)
 components/charts/      composants Bklit UI (registre shadcn), voir « Écarts » ci-dessous
@@ -34,7 +34,6 @@ public/pwa-install-animation.html  animation d'installation iOS (rebrandée La R
 
 - Aucun chiffre ne quitte l'appareil : pas d'API, pas de base de données, pas d'analytics.
 - La simulation en cours est sauvegardée dans `localStorage` (clé `simulateur:v1`).
-- Le lien « Partager » encode la simulation dans le fragment (`#s=…`), jamais transmis au serveur ; il est retiré de l'URL après chargement.
 - Open Sans est auto-hébergée au build (`next/font`), aucune requête vers Google au runtime.
 
 ## Modifications apportées aux composants Bklit
@@ -44,6 +43,10 @@ Les composants sont copiés dans le projet par le registre shadcn et ont été a
 - `bar.tsx` / `bar-chart.tsx` : prise en charge des valeurs négatives (domaine sous zéro, barres depuis la ligne 0), couleur par barre (`getFill`) pour afficher une marge négative en rouge, correction de la largeur des barres horizontales empilées.
 - `sankey-node.tsx` : prop `formatValue` (le libellé par défaut affichait « sessions »).
 
+## Thème
+
+Clair ou sombre selon l'apparence système de l'appareil, avec un bouton de bascule dans l'en-tête. Un choix manuel est mémorisé (`localStorage`, clé `theme`) tant qu'il diffère du système ; `data-theme` est posé avant le premier affichage pour éviter tout flash.
+
 ## Animations
 
-Les transitions suivent l'échelle de tokens de mouvement de [transitions.dev](https://transitions.dev) (déclarée dans `app/globals.css` : `--duration-*`, `--ease-smooth-out`…) : pastille glissante des segmented controls, apparition du titre, modale du guide d'installation, toast, bascule d'icône du bouton Partager, accordéons. Les montants clés roulent vers leur nouvelle valeur avec [NumberFlow](https://number-flow.barvian.me) (MIT), avec un texte équivalent pour les lecteurs d'écran. Tout est désactivé avec `prefers-reduced-motion`.
+Les transitions suivent l'échelle de tokens de mouvement de [transitions.dev](https://transitions.dev) (déclarée dans `app/globals.css` : `--duration-*`, `--ease-smooth-out`…) : pastille glissante des segmented controls, apparition du titre, modale du guide d'installation, toast, bascule d'icône du bouton de thème, accordéons. Les montants clés roulent vers leur nouvelle valeur avec [NumberFlow](https://number-flow.barvian.me) (MIT), avec un texte équivalent pour les lecteurs d'écran. Tout est désactivé avec `prefers-reduced-motion`.

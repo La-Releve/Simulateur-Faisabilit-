@@ -2,8 +2,10 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Thème sombre uniquement (charte La Relève). */
-@custom-variant dark (&:is(*));
+/* Thème : sombre par défaut (charte La Relève), clair via [data-theme="light"].
+   data-theme est posé avant le premier rendu (script dans layout.tsx) d'après la
+   préférence enregistrée, sinon l'apparence système. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
   /* Couleurs de base (design system La Relève) */
@@ -28,9 +30,17 @@
   --text-muted: rgba(255, 255, 255, 0.5);
   --text-label: #71717a;
   --negative: #ef4444;
+  --surface-elevated: #18181b;
+  --page-bg: var(--color-black-1);
+  --gauge-track: rgba(255, 255, 255, 0.35);
+  --modal-scrim: rgba(0, 0, 0, 0.7);
+  /* Nuances neutres des flux (Sankey / barres Ressources-Emplois) */
+  --flow-strong: #e4e4e7;
+  --flow-center: #d4d4d8;
+  --flow-weak: #3f3f46;
 
   /* shadcn */
-  --background: var(--color-black-1);
+  --background: var(--page-bg);
   --foreground: var(--text-primary);
   --card: var(--color-dark-gray);
   --card-foreground: var(--text-primary);
@@ -95,6 +105,50 @@
   --blur-medium: 3px;
 }
 
+/* Mode clair */
+:root[data-theme="light"] {
+  --page-bg: #f7f7f8;
+  --surface-card: #ffffff;
+  --surface-card-hover: #f4f4f5;
+  --surface-elevated: #ffffff;
+  --border-subtle: rgba(9, 9, 11, 0.08);
+  --border-strong: rgba(9, 9, 11, 0.16);
+  --accent-soft: rgba(255, 113, 31, 0.1);
+  --accent-soft-2: rgba(255, 113, 31, 0.28);
+  --text-primary: #09090b;
+  --text-secondary: rgba(9, 9, 11, 0.7);
+  --text-muted: rgba(9, 9, 11, 0.5);
+  --text-label: #71717a;
+  --negative: #dc2626;
+  --gauge-track: rgba(9, 9, 11, 0.14);
+  --modal-scrim: rgba(9, 9, 11, 0.4);
+  --flow-strong: #27272a;
+  --flow-center: #3f3f46;
+  --flow-weak: #d4d4d8;
+
+  --card: #ffffff;
+  --popover: #ffffff;
+  --secondary: rgba(9, 9, 11, 0.06);
+  --muted: rgba(9, 9, 11, 0.04);
+  --accent: rgba(9, 9, 11, 0.06);
+
+  --chart-grid: rgba(9, 9, 11, 0.08);
+  --chart-foreground: rgba(9, 9, 11, 0.7);
+  --chart-foreground-muted: rgba(9, 9, 11, 0.5);
+  --chart-background: #ffffff;
+  --chart-crosshair: rgba(9, 9, 11, 0.3);
+  --chart-tooltip-background: rgba(255, 255, 255, 0.97);
+  --chart-tooltip-foreground: #09090b;
+  --chart-tooltip-muted: rgba(9, 9, 11, 0.6);
+  --chart-marker-background: #ffffff;
+  --chart-marker-border: rgba(9, 9, 11, 0.16);
+  --chart-marker-foreground: #09090b;
+  --chart-label: rgba(9, 9, 11, 0.7);
+  --border: rgba(9, 9, 11, 0.08);
+
+  color-scheme: light;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -153,6 +207,8 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-text-label: var(--text-label);
+  --color-fg: var(--text-primary);
+  --color-elevated: var(--surface-elevated);
 }
 
 @layer base {
@@ -161,12 +217,12 @@
   }
   html {
     @apply font-sans;
-    background: var(--color-black-1);
+    background: var(--page-bg);
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    background: var(--color-black-1);
+    background: var(--page-bg);
     color: var(--text-primary);
     min-height: 100dvh;
   }
@@ -272,7 +328,7 @@
 
 /* Modal open / close — scale depuis le centre ; bottom sheet qui monte sur mobile */
 .t-modal-backdrop::backdrop {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--modal-scrim);
   backdrop-filter: blur(4px);
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-smooth-out);
@@ -395,4 +451,9 @@
   .t-stagger-line {
     animation: none !important;
   }
+}
+
+/* Logo blanc → noir en mode clair */
+[data-theme="light"] .logo-adaptive {
+  filter: invert(1);
 }

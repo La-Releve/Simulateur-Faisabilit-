@@ -7,7 +7,7 @@ export function SectionTitle({ index, eyebrow, title, subtitle }: { index: strin
       <span className="eyebrow">
         {index} — {eyebrow}
       </span>
-      <h2 className="text-2xl leading-tight font-extrabold text-white md:text-[30px]">{title}</h2>
+      <h2 className="text-2xl leading-tight font-extrabold text-fg md:text-[30px]">{title}</h2>
       {subtitle ? <p className="text-sm font-light text-text-secondary md:text-base">{subtitle}</p> : null}
     </div>
   );
@@ -37,13 +37,13 @@ export function Row({
       )}
     >
       <div className="min-w-0">
-        <div className={cn("text-sm", kind === "line" ? "text-text-secondary" : "font-semibold text-white")}>{label}</div>
+        <div className={cn("text-sm", kind === "line" ? "text-text-secondary" : "font-semibold text-fg")}>{label}</div>
         {help ? <div className="mt-0.5 text-xs font-light text-text-muted">{help}</div> : null}
       </div>
       <div
         className={cn(
           "tabular shrink-0 text-right",
-          kind === "total" ? "text-2xl font-extrabold text-orange" : "text-sm font-semibold text-white",
+          kind === "total" ? "text-2xl font-extrabold text-orange" : "text-sm font-semibold text-fg",
           negative && "text-negative",
         )}
       >

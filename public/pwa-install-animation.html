@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Déclare les deux schémas : sinon, dans une page en mode sombre, le navigateur peint un fond
+     opaque derrière l'iframe au lieu de la laisser transparente. -->
+<meta name="color-scheme" content="light dark">
 <title>La Relève — installer l'app sur l'écran d'accueil</title>
 <style>
 /* =====================================================================
@@ -22,6 +25,7 @@
 
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
+:root{color-scheme:light dark}
 body{
   min-height:100%;
   /* Ancré EN HAUT (flex-start) : le téléphone « sort » du haut du modal hôte,

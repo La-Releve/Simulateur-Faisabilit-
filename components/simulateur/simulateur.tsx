@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
-import { Check, Download, RotateCcw, Share2 } from "lucide-react";
+import { Download, Moon, RotateCcw, Sun } from "lucide-react";
 import { computeFaisabilite } from "@/lib/simulateur/engine";
 import {
   formatEur,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/simulateur/format";
 import { DUREES, PARAMS } from "@/lib/simulateur/params";
 import { computeScenario, SCENARIOS, type ScenarioKey } from "@/lib/simulateur/scenarios";
-import { encodeShareHash, toInputs, type SimState } from "@/lib/simulateur/state";
+import { toInputs, type SimState } from "@/lib/simulateur/state";
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
 import { Accordion } from "./accordion";
@@ -27,6 +27,7 @@ import { Toast, useToast } from "./toast";
 import { Row, SectionTitle } from "./ui";
 import { useInstall } from "./use-install";
 import { useSimulation } from "./use-simulation";
+import { useTheme } from "./use-theme";
 
 const P = PARAMS;
 
@@ -48,15 +49,13 @@ export function Simulateur() {
           reset();
           toast.show("Nouvelle simulation");
         }}
-        onCopied={() => toast.show("Lien copié")}
-        state={state}
-        showInstall={install.ready && !install.standalone}
+        showInstall={install.ready && !install.standalone && install.platform !== "desktop"}
         onInstall={() => (install.canPromptInstall && install.platform === "android" ? install.promptInstall() : install.openGuide())}
       />
 
       <main className="mx-auto w-full max-w-[1200px] px-4 pb-16 sm:px-6">
         <div className="pt-6 pb-8 md:pt-10 md:pb-12">
-          <h1 className="t-stagger-line text-[32px] leading-none font-extrabold tracking-[-0.025em] text-white md:text-5xl">
+          <h1 className="t-stagger-line text-[32px] leading-none font-extrabold tracking-[-0.025em] text-fg md:text-5xl">
             Simulateur de <span className="text-orange">faisabilité</span>
           </h1>
           <p className="t-stagger-line t-stagger-line--2 mt-4 max-w-2xl text-sm font-light text-text-secondary md:text-base">
@@ -80,13 +79,15 @@ export function Simulateur() {
       </main>
 
       <Toast message={toast.message} open={toast.open} />
-      <InstallGuide
-        open={install.open}
-        platform={install.platform}
-        canPromptInstall={install.canPromptInstall}
-        onInstall={install.promptInstall}
-        onClose={install.dismiss}
-      />
+      {install.ready && install.platform !== "desktop" ? (
+        <InstallGuide
+          open={install.open}
+          platform={install.platform}
+          canPromptInstall={install.canPromptInstall}
+          onInstall={install.promptInstall}
+          onClose={install.dismiss}
+        />
+      ) : null}
     </div>
   );
 }
@@ -95,35 +96,14 @@ export function Simulateur() {
 
 function Header({
   onReset,
-  onCopied,
-  state,
   showInstall,
   onInstall,
 }: {
   onReset: () => void;
-  onCopied: () => void;
-  state: SimState;
   showInstall: boolean;
   onInstall: () => void;
 }) {
-  const [shared, setShared] = useState(false);
-
-  async function share() {
-    // L'état est encodé dans le fragment (#…), jamais transmis au serveur.
-    const url = `${window.location.origin}${window.location.pathname}${encodeShareHash(state)}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Simulation — La Relève", url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setShared(true);
-      onCopied();
-      setTimeout(() => setShared(false), 2000);
-    } catch {
-      // partage annulé
-    }
-  }
+  const { theme, toggle } = useTheme();
 
   function confirmReset() {
     if (window.confirm("Effacer la simulation en cours ?")) onReset();
@@ -131,22 +111,30 @@ function Header({
 
   return (
     <header className="mx-auto flex w-full max-w-[1200px] items-center gap-3 px-4 pt-4 sm:px-6">
-      <Image src="/logo-la-releve.png" alt="La Relève" width={915} height={280} priority unoptimized className="h-7 w-auto md:h-8" />
+      <Image
+        src="/logo-la-releve.png"
+        alt="La Relève"
+        width={915}
+        height={280}
+        priority
+        unoptimized
+        className="logo-adaptive h-7 w-auto md:h-8"
+      />
       <div className="flex-1" />
       {showInstall ? (
         <button
           type="button"
           onClick={onInstall}
-          className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-semibold text-text-secondary hover:text-white"
+          className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-semibold text-text-secondary hover:text-fg"
         >
           <Download className="size-3.5" />
           Installer l&apos;app
         </button>
       ) : null}
-      <IconButton label={shared ? "Lien copié" : "Partager cette simulation"} onClick={share}>
-        <span className="t-icon-swap" data-state={shared ? "b" : "a"}>
-          <Share2 className="t-icon size-4" data-icon="a" />
-          <Check className="t-icon size-4 text-orange" data-icon="b" />
+      <IconButton label={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"} onClick={toggle}>
+        <span className="t-icon-swap" data-state={theme === "dark" ? "b" : "a"}>
+          <Moon className="t-icon size-4" data-icon="a" />
+          <Sun className="t-icon size-4" data-icon="b" />
         </span>
       </IconButton>
       <IconButton label="Nouvelle simulation" onClick={confirmReset}>
@@ -163,7 +151,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex size-9 items-center justify-center rounded-full border border-line-strong bg-surface text-white/80 transition-colors hover:bg-surface-hover hover:text-white"
+      className="flex size-9 items-center justify-center rounded-full border border-line-strong bg-surface text-fg/80 transition-colors hover:bg-surface-hover hover:text-fg"
     >
       {children}
     </button>
@@ -185,7 +173,7 @@ function InputsSection({ state, update, validation }: { state: SimState; update:
     <section className="card" aria-labelledby="s01">
       <div className="mb-6 flex flex-col gap-2">
         <span className="eyebrow">01 — Le bien</span>
-        <h2 id="s01" className="text-2xl font-extrabold text-white">
+        <h2 id="s01" className="text-2xl font-extrabold text-fg">
           L&apos;opération
         </h2>
       </div>
@@ -286,12 +274,12 @@ function KpiSection({ result, validation }: { result: Result; validation: Valida
       <SectionTitle index="02" eyebrow="L'essentiel" title="Ce que coûte l'opération" />
       {!o ? (
         <div className="mb-4 rounded-2xl border border-accent-soft-2 bg-accent-soft px-5 py-4 text-sm text-text-secondary">
-          <p className="font-semibold text-white">Complète ces valeurs pour commencer :</p>
+          <p className="font-semibold text-fg">Complète ces valeurs pour commencer :</p>
           <ol className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1">
             {(["prixAcquisition", "surface", "travaux"] as const).map((k, i) => (
               <li
                 key={k}
-                className={cn(!validation.ok && validation.missing.includes(k) ? "text-white" : "text-text-muted line-through")}
+                className={cn(!validation.ok && validation.missing.includes(k) ? "text-fg" : "text-text-muted line-through")}
               >
                 {i + 1}. {MISSING_LABELS[k]}
               </li>
@@ -462,7 +450,7 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="card">
-          <h3 className="text-2xl font-extrabold text-white">D&apos;où vient l&apos;argent</h3>
+          <h3 className="text-2xl font-extrabold text-fg">D&apos;où vient l&apos;argent</h3>
           <p className="label-key mt-1 mb-4">Ressources</p>
           <Row label="Prêt bancaire acquisition" value={formatEur(o.pretAcquisition)} />
           <Row label="Prêt bancaire travaux" value={formatEur(o.pretTravaux)} />
@@ -471,7 +459,7 @@ function FinancementSection({ inputs, outputs: o }: { inputs: Inputs; outputs: O
           <Row kind="total" label="Total ressources" value={<AnimatedNumber kind="eur" value={o.R1_total} />} />
         </div>
         <div className="card">
-          <h3 className="text-2xl font-extrabold text-white">Où va l&apos;argent</h3>
+          <h3 className="text-2xl font-extrabold text-fg">Où va l&apos;argent</h3>
           <p className="label-key mt-1 mb-4">Emplois</p>
           <Row label="Acquisition" value={formatEur(inputs.prixAcquisition)} />
           <Row label="Travaux" value={formatEur(inputs.travaux)} />

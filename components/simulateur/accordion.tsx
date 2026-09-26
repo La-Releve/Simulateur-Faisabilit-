@@ -16,7 +16,7 @@ export function Accordion({ title, total, children }: { title: string; total: Re
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-3 px-5 py-4 text-left md:px-6"
       >
-        <span className="flex-1 text-base font-semibold text-white">{title}</span>
+        <span className="flex-1 text-base font-semibold text-fg">{title}</span>
         <span className="tabular text-base font-extrabold text-orange">{total}</span>
         <ChevronDown className="t-acc-chevron size-5 shrink-0 text-text-muted" />
       </button>

@@ -51,7 +51,7 @@ export function FinancementSankey({ outputs, prixAcquisition, travaux }: { outpu
       ...sources.map((s, i) => ({ source: i, target: centre, value: s.value })),
       ...usages.map((u, i) => ({ source: centre, target: centre + 1 + i, value: u.value })),
     ];
-    const colors = [...sources.map((s) => s.color), "#d4d4d8", ...usages.map((u) => u.color)];
+    const colors = [...sources.map((s) => s.color), "var(--flow-center)", ...usages.map((u) => u.color)];
     return { data: { nodes, links }, colors };
   }, [outputs, prixAcquisition, travaux]);
 
@@ -73,7 +73,7 @@ export function FinancementSankey({ outputs, prixAcquisition, travaux }: { outpu
         nodeContent={({ node }) => (
           <div className="px-3 py-2.5">
             <div className="text-xs text-chart-tooltip-muted">{node.name}</div>
-            <div className="tabular text-sm font-semibold text-white">{formatEur(node.value ?? 0)}</div>
+            <div className="tabular text-sm font-semibold text-chart-tooltip-foreground">{formatEur(node.value ?? 0)}</div>
           </div>
         )}
       />
@@ -88,9 +88,9 @@ const FLOW_SERIES = [
   { key: "pretTravaux", label: "Prêt travaux", color: "#52525b" },
   { key: "detteObligataire", label: "Dette obligataire", color: "var(--chart-2)" },
   { key: "fondsPropres", label: "Fonds propres", color: "var(--chart-1)" },
-  { key: "acquisition", label: "Acquisition", color: "#e4e4e7" },
+  { key: "acquisition", label: "Acquisition", color: "var(--flow-strong)" },
   { key: "travaux", label: "Travaux", color: "#a1a1aa" },
-  { key: "frais", label: "Frais", color: "#3f3f46" },
+  { key: "frais", label: "Frais", color: "var(--flow-weak)" },
 ] as const;
 
 export function FinancementBars({ outputs: o, prixAcquisition, travaux }: { outputs: Outputs; prixAcquisition: number; travaux: number }) {
@@ -143,7 +143,7 @@ export function FinancementBars({ outputs: o, prixAcquisition, travaux }: { outp
           showDots={false}
           content={({ point }) => (
             <div className="min-w-44 px-3 py-2.5">
-              <div className="mb-1.5 text-xs font-semibold text-white">{String(point.name)}</div>
+              <div className="mb-1.5 text-xs font-semibold text-chart-tooltip-foreground">{String(point.name)}</div>
               {FLOW_SERIES.filter((f) => (point[f.key] as number) > 0).map((f) => (
                 <TooltipLine key={f.key} label={f.label} value={formatEur(point[f.key] as number)} />
               ))}
@@ -209,7 +209,7 @@ export function MargeBarChart({ items }: { items: ScenarioBarDatum[] }) {
           const marge = point.marge as number;
           return (
             <div className="min-w-44 px-3 py-2.5">
-              <div className="mb-1.5 text-xs font-semibold text-white">{String(point.name)}</div>
+              <div className="mb-1.5 text-xs font-semibold text-chart-tooltip-foreground">{String(point.name)}</div>
               <TooltipLine label="Marge brute" value={formatEurSigned(marge)} negative={marge < 0} />
               <TooltipLine label="Rentabilité" value={formatPct1(point.rentabilite as number)} negative={marge < 0} />
               <TooltipLine label="Prix de vente" value={formatEur(point.prixVenteTotal as number)} />
@@ -225,7 +225,7 @@ function TooltipLine({ label, value, negative }: { label: string; value: string;
   return (
     <div className="flex items-baseline justify-between gap-4 text-xs">
       <span className="text-chart-tooltip-muted">{label}</span>
-      <span className={negative ? "tabular font-semibold text-negative" : "tabular font-semibold text-white"}>{value}</span>
+      <span className={negative ? "tabular font-semibold text-negative" : "tabular font-semibold text-chart-tooltip-foreground"}>{value}</span>
     </div>
   );
 }
@@ -241,7 +241,7 @@ export function LtcGauge({ value }: { value: number }) {
       notchCornerRadius={2}
       inactiveFillOpacity={0.4}
       activeFill="var(--chart-1)"
-      inactiveFill="rgba(255, 255, 255, 0.35)"
+      inactiveFill="var(--gauge-track)"
       linearHeight={10}
       minWidth={0}
     />

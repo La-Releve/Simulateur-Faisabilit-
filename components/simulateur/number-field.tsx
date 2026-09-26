@@ -88,7 +88,7 @@ export function NumberField({
             caret.current = significantBefore(raw, e.target.selectionStart ?? raw.length);
             onChange(formatInputDraft(raw));
           }}
-          className="tabular min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/25"
+          className="tabular min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-fg/25"
         />
         {suffix ? <span className="ml-2 shrink-0 text-sm text-text-muted">{suffix}</span> : null}
       </div>
