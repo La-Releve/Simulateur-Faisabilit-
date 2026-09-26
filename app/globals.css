@@ -468,13 +468,19 @@
   transform: scale(var(--scale-large));
   transition-duration: var(--duration-quick);
 }
+/* Mobile : feuille ancrée au bas de l'écran (bottom: 0) qui glisse depuis le bord inférieur,
+   sans dépassement ni rebond — seul le transform est animé, la position ne bouge jamais. */
 @media (max-width: 767px) {
   .t-modal {
-    transform: translateY(40px);
-    transition-duration: var(--duration-slow);
+    opacity: 1;
+    transform: translateY(100%);
+    transition:
+      transform var(--duration-slow) var(--ease-smooth-out),
+      opacity 0s;
   }
   [data-state="closing"] > .t-modal {
-    transform: translateY(40px);
+    opacity: 1;
+    transform: translateY(100%);
     transition-duration: var(--duration-medium);
   }
 }

@@ -41,7 +41,7 @@ const STEPS = [
 /** Modale (bottom sheet sur mobile) expliquant l'installation de la PWA. */
 export function InstallGuide({ open, platform, canPromptInstall, onInstall, onClose }: InstallGuideProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const primaryRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameLoaded, setFrameLoaded] = useState(false);
   const ios = platform === "ios-safari";
@@ -65,8 +65,9 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
     if (open) {
       if (!d.open) {
         d.showModal();
-        // Focus sur l'action principale plutôt que sur la croix (premier élément focusable)
-        primaryRef.current?.focus({ preventScroll: true });
+        // Focus sur la feuille elle-même (et non sur un bouton) : pas d'anneau de sélection
+        // sur « J'ai compris », et pas de défilement iOS pour amener un bouton à l'écran.
+        panelRef.current?.focus({ preventScroll: true });
       }
       const raf = requestAnimationFrame(() => requestAnimationFrame(() => setState("open")));
       return () => cancelAnimationFrame(raf);
@@ -104,9 +105,13 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="t-modal-backdrop fixed m-0 mt-auto w-full max-w-none bg-transparent p-0 text-fg md:m-auto md:max-w-[440px]"
+      className="t-modal-backdrop fixed inset-x-0 top-auto bottom-0 m-0 max-h-dvh w-full max-w-none overflow-visible bg-transparent p-0 text-fg md:inset-0 md:m-auto md:max-w-[440px]"
     >
-      <div className="t-modal relative rounded-t-3xl border border-line bg-elevated p-5 pb-[max(20px,env(safe-area-inset-bottom))] md:rounded-3xl">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="t-modal relative rounded-t-3xl border outline-none border-line bg-elevated p-5 pb-[max(20px,env(safe-area-inset-bottom))] md:rounded-3xl"
+      >
         <button
           type="button"
           onClick={onClose}
@@ -190,7 +195,6 @@ export function InstallGuide({ open, platform, canPromptInstall, onInstall, onCl
           <button
             type="button"
             onClick={onClose}
-            ref={primaryRef}
             className={
               canPromptInstall && !ios && !inApp
                 ? "h-12 rounded-xl border border-line-strong px-6 text-base font-semibold text-fg"

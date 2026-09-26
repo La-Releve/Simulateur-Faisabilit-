@@ -13,15 +13,17 @@ export function Accordion({ title, total, children }: { title: string; total: Re
     const next = !open;
     setOpen(next);
     if (next) {
-      // Amène le détail à l'écran : l'en-tête se place en haut, le contenu se déplie dessous.
+      // Amène le détail à l'écran en gardant le titre de la section visible : l'ancrage se fait
+      // sur la section qui contient l'accordéon (à défaut, sur l'accordéon lui-même).
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      requestAnimationFrame(() =>
-        rootRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }),
-      );
+      requestAnimationFrame(() => {
+        const target = rootRef.current?.closest("section") ?? rootRef.current;
+        target?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+      });
     }
   }
   return (
-    <div ref={rootRef} className="t-acc scroll-mt-4 rounded-2xl border border-line bg-surface" data-open={open}>
+    <div ref={rootRef} className="t-acc rounded-2xl border border-line bg-surface" data-open={open}>
       <button
         type="button"
         aria-expanded={open}

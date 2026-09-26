@@ -18,6 +18,7 @@ import { DEFAULT_STATE, shareUrl, toInputs, type SimState } from "@/lib/simulate
 import type { Inputs, Outputs, Scenario } from "@/lib/simulateur/types";
 import { cn } from "@/lib/utils";
 import { Accordion } from "./accordion";
+import { FitText } from "./fit-text";
 import { AnimatedNumber } from "./animated-number";
 import { FinancementSankey, LtcGauge } from "./charts";
 import { InstallGuide } from "./install-guide";
@@ -129,9 +130,10 @@ export function Simulateur() {
           <h1 className="t-stagger-line text-[32px] leading-none font-extrabold tracking-[-0.025em] text-fg md:text-5xl">
             Simulateur de <span className="text-orange">faisabilité</span>
           </h1>
-          <p className="t-stagger-line t-stagger-line--2 mt-4 max-w-2xl text-sm font-light text-text-secondary md:text-base">
+          {/* Une seule ligne : taille ajustée à la largeur réellement disponible */}
+          <FitText as="p" max={16} min={10} className="t-stagger-line t-stagger-line--2 mt-4 max-w-2xl font-light text-text-secondary">
             Combien coûte l&apos;opération, combien apporter, à quel prix revendre.
-          </p>
+          </FitText>
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start">
@@ -408,7 +410,8 @@ function KpiSection({ outputs: o }: { outputs: Outputs }) {
   return (
     <section aria-labelledby="s02">
       <SectionTitle index="02" eyebrow="L'essentiel" title="Ce que coûte l'opération" />
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
+      {/* auto-rows-fr : les quatre tuiles ont la même hauteur, quelle que soit la ligne */}
+      <div className="grid auto-rows-fr grid-cols-2 gap-3 md:gap-4">
         <Kpi
           label="Coût total de l'opération"
           value={<AnimatedNumber kind="eur" value={o.totalReelInclDetteObligataire} />}
@@ -417,7 +420,12 @@ function KpiSection({ outputs: o }: { outputs: Outputs }) {
         <Kpi
           label="Apport nécessaire"
           value={<AnimatedNumber kind="eur" value={o.apportTotal} />}
-          sub={`Fonds propres ${formatEur(o.fondsPropres)} · Dette obligataire ${formatEur(o.detteObligataire)}`}
+          sub={
+            <FitText as="ul" max={12} min={10} className="space-y-0.5">
+              <li>• Fonds propres {formatEur(o.fondsPropres)}</li>
+              <li>• Dette obligataire {formatEur(o.detteObligataire)}</li>
+            </FitText>
+          }
         />
         <Kpi
           label="Prix de revient au m²"
@@ -436,10 +444,10 @@ function KpiSection({ outputs: o }: { outputs: Outputs }) {
 
 function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 rounded-2xl border border-line bg-surface p-4 md:p-5">
+    <div className="flex min-w-0 flex-col gap-1.5 rounded-2xl border border-line bg-surface px-3 py-4 min-[400px]:px-4 md:p-5">
       <div className="tabular text-[22px] leading-tight font-extrabold text-orange sm:text-[28px] md:text-[30px]">{value}</div>
       <div className="label-key">{label}</div>
-      {sub ? <div className="mt-1 text-xs font-light text-text-muted">{sub}</div> : null}
+      {sub ? <div className="mt-1 min-w-0 text-xs font-light text-text-muted">{sub}</div> : null}
     </div>
   );
 }
@@ -625,7 +633,7 @@ function DetailSection({ inputs, outputs: o }: { inputs: Inputs; outputs: Output
   const agenceHelp =
     inputs.modeAgence === "pct" ? `${formatRate(inputs.valeurAgence)} du prix d'acquisition` : "Montant saisi";
   return (
-    <section aria-labelledby="s04">
+    <section aria-labelledby="s04" className="scroll-mt-4">
       <SectionTitle index="04" eyebrow="Détail du chiffrage" title="Ligne par ligne" />
       <div className="flex flex-col gap-3">
         <Accordion title="Frais d'acquisition et de financement" total={<AnimatedNumber kind="eur" value={o.E2_sousTotal} />}>
